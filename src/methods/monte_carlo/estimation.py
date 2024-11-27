@@ -6,6 +6,25 @@ from concurrent.futures import ProcessPoolExecutor
 from common.parameters import MINIMUM_TIME_UNIT
 
 
+def required_sample_size_binomial(error_margin, false_probability):
+    """
+    Calculate the required sample size for a binomial distribution using a normal approximation.
+
+    Parameters:
+    - error_margin: Allowed margin of error (epsilon).
+    - false_probability: Probability of a false result (alpha level).
+    - output_dir: Directory to save the output log file.
+
+    Returns:
+    - required_n: Required sample size.
+    """
+    # Calculate required sample size
+    z = norm.ppf(1 - (false_probability / 2))  # z-score (confidence interval)
+    p = 0.5  # Maximum uncertainty for the deadline miss probability (worst case)
+    required_n = (z**2 * p * (1 - p)) / (error_margin**2)
+    return np.ceil(required_n)
+
+
 def calculate_response_time(taskset, target_job, log_flag=False, traditional_ci=False):
     """
     Calculate the response time of a target job using a timeline simulation.
@@ -132,7 +151,7 @@ def calculate_response_time_distribution(taskset, target_job, false_probability=
     :param taskset: TaskSet containing tasks and timeline
     :param target_job: Target job for which response times are calculated
     :param false_probability: False positive rate for confidence interval
-    :param log_flag: If True, logs detailed intermediate results
+    :param log_flag: If True, logs detailed intermediate results and shows tqdm progress bar
     :param traditional_ci: If True, uses traditional carry-in calculations
     :param plot_flag: If True, plots a histogram of response times
     :param seed: Random seed for reproducibility
@@ -151,7 +170,8 @@ def calculate_response_time_distribution(taskset, target_job, false_probability=
 
     if thread_num == 1:
         # Single-threaded processing
-        for _ in tqdm(range(int(samples)), desc="Collecting Samples"):
+        sample_range = tqdm(range(int(samples)), desc="Collecting Samples") if log_flag else range(int(samples))
+        for _ in sample_range:
             response_time = calculate_response_time(taskset, target_job, log_flag=log_flag, traditional_ci=traditional_ci)
             response_times.append(response_time)
             if response_time >= target_job.absolute_deadline:
@@ -167,7 +187,8 @@ def calculate_response_time_distribution(taskset, target_job, false_probability=
                 futures.append(executor.submit(sample_responses, n_samples, taskset, target_job, thread_seed))
 
             # Collect results from each thread
-            for future in tqdm(futures, desc="Collecting Results from Processes"):
+            process_range = tqdm(futures, desc="Collecting Results from Processes") if log_flag else futures
+            for future in process_range:
                 sub_response_times, sub_deadline_miss_cnt = future.result()
                 if plot_flag:
                     response_times.extend(sub_response_times)
