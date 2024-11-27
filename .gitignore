@@ -1,2 +1,43 @@
-.git
-.venv
+# Byte-compiled files
+*.py[cod]
+__pycache__/
+*.so
+
+# Virtual environments
+.venv/
+env/
+venv/
+
+# Rye-specific virtual environment
+.rye/
+
+# Distribution files
+*.egg
+*.egg-info/
+dist/
+build/
+*.whl
+
+# Testing
+htmlcov/
+.coverage
+*.cover
+.cache
+nosetests.xml
+coverage.xml
+*.log
+
+# Jupyter Notebooks
+.ipynb_checkpoints/
+
+# OS-specific files
+.DS_Store
+Thumbs.db
+
+# IDE-specific files
+.vscode/
+.idea/
+*.swp
+
+memo.md
+**/output/*

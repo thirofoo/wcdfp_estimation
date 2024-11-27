@@ -2,7 +2,7 @@ import random
 import numpy as np
 from common.task import Task
 from common.job import Job
-from common.utils import round_min_unit
+from common.utils import round_min_unit, calculate_wcet
 from common.parameters import MINIMUM_TIME_UNIT
 
 
@@ -50,7 +50,7 @@ class TaskSet:
             relative_deadline = minimum_inter_arrival_time
             max_deadline = max(max_deadline, relative_deadline)
 
-            wcet = self.calculate_wcet(minimum_inter_arrival_time, rate)
+            wcet = calculate_wcet(minimum_inter_arrival_time, rate)
             influence = minimum_inter_arrival_time * rate
             task_influences.append((wcet, relative_deadline, minimum_inter_arrival_time, rate, influence))
 
@@ -75,19 +75,3 @@ class TaskSet:
                 timeline_index = int(t / MINIMUM_TIME_UNIT)
                 self.timeline[timeline_index].append(job)
                 t += task.minimum_inter_arrival_time
-
-    @staticmethod
-    def calculate_wcet(minimum_inter_arrival_time, rate, tol=1e-10):
-        """
-        Calculate the WCET using binary search.
-        """
-        low, high = 0, minimum_inter_arrival_time
-        target = minimum_inter_arrival_time * rate
-        while high - low > tol:
-            mid = (low + high) / 2.0
-            expected_time = TaskSet.calculate_expected_execution_time(mid, 0, mid)
-            if expected_time < target:
-                low = mid
-            else:
-                high = mid
-        return (low + high) / 2.0

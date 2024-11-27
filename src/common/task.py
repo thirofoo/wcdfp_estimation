@@ -97,20 +97,6 @@ class Task:
         idx = bisect_left(self.cdf_values, random_value)
         return self.x_values[idx]
 
-    def get_execution_time_with_weight(self):
-        """
-        Sample execution time using the tilted CDF and compute the weight.
-        """
-        random_value = np.random.uniform(0, 1)
-        idx = bisect_left(self.tilted_cdf_values, random_value)
-        sampled_execution_time = self.x_values[idx]
-
-        # Compute weights from the original and tilted PDFs
-        original_pdf = self.original_pdf_values[idx]
-        tilted_pdf = self.tilted_pdf_values[idx]
-        weight = original_pdf / tilted_pdf
-        return sampled_execution_time, weight
-
     def get_log_pWCET_mgf(self, s):
         """
         Compute the log of the moment-generating function (MGF) for pWCET analysis.
