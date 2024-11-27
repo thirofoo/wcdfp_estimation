@@ -1,7 +1,7 @@
 from common.taskset import TaskSet
 from methods.monte_carlo.estimation import calculate_response_time
 
-def verify_response_time():
+def verify_monte_carlo():
     """
     Verify the response time calculation for the lowest priority task in a TaskSet.
     """
@@ -20,4 +20,4 @@ def verify_response_time():
     print(f"Calculated Response Time: {response_time}")
 
 if __name__ == "__main__":
-    verify_response_time()
+    verify_monte_carlo()
