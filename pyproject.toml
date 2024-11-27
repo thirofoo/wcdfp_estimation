@@ -18,7 +18,9 @@ requires-python = ">= 3.8"
 [project.scripts]
 evaluate = "evaluation:main"
 verify_taskset = "verification.verify_taskset:verify_taskset"
-verify_response_time = "verification.verify_response_time:verify_response_time"
+verify_monte_carlo = "verification.verify_monte_carlo:verify_monte_carlo"
+verify_convolution = "verification.verify_convolution:verify_convolution"
+verify_berry_essen = "verification.verify_berry_essen:verify_berry_essen"
 
 [build-system]
 requires = ["hatchling"]
