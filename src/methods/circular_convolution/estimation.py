@@ -77,7 +77,7 @@ def calculate_response_time_by_conv(taskset, target_job, log_flag=False, traditi
     return response_time, wcdfp
 
 
-def compute_response_time_with_doubling(taskset, target_job):
+def calculate_response_time_with_doubling(taskset, target_job, log_flag=False):
     """
     Calculate response time distribution using doubling technique with truncation.
 
@@ -90,7 +90,7 @@ def compute_response_time_with_doubling(taskset, target_job):
     response_time[0] = 1.0  # Initial PDF for response time
     wcdfp = 0.0  # Initialize WCDFP as 0.0
 
-    for task in tqdm(taskset.tasks, desc="Processing tasks"):
+    for task in tqdm(taskset.tasks, desc="Processing tasks", disable=not log_flag):
         release_count = int(np.ceil((target_job.task.relative_deadline + task.relative_deadline) / task.minimum_inter_arrival_time))
         if target_job.task == task:
             release_count = 1
@@ -103,6 +103,7 @@ def compute_response_time_with_doubling(taskset, target_job):
             current_pdf, _ = convolve_and_truncate(current_pdf, current_pdf, size)
             release_count //= 2
 
-    print(f"Final WCDFP: {wcdfp}")
-    print(f"Sum of response_time: {np.sum(response_time)}")
+    if log_flag:
+        print(f"Final WCDFP: {wcdfp}")
+        print(f"Sum of response_time: {np.sum(response_time)}")
     return response_time, wcdfp

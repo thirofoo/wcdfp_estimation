@@ -12,3 +12,7 @@ ABNORMAL_STD_COEFF = 30.0  # Standard deviation for abnormal mode
 
 # Threshold to determine if the execution time distribution is sparse
 SPARSITY_THRESHOLD = 30
+
+# Coefficient used in the Berry-Essen theorem to adjust the penalty term (ψ).
+# This value (0.56) is based on the latest research findings as the optimal parameter for accuracy.
+BERRY_ESSEN_COEFFICIENT = 0.56

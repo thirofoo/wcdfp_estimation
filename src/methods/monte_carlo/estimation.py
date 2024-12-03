@@ -190,8 +190,7 @@ def calculate_response_time_distribution(taskset, target_job, false_probability=
             process_range = tqdm(futures, desc="Collecting Results from Processes") if log_flag else futures
             for future in process_range:
                 sub_response_times, sub_deadline_miss_cnt = future.result()
-                if plot_flag:
-                    response_times.extend(sub_response_times)
+                response_times.extend(sub_response_times)
                 deadline_miss_cnt += sub_deadline_miss_cnt
 
     # Calculate deadline miss probability upper bound using Agresti-Coull interval
@@ -222,4 +221,5 @@ def calculate_response_time_distribution(taskset, target_job, false_probability=
         plt.grid(True)
         plt.show()
 
-    return response_times, deadline_miss_prob_upper_jeffreys
+    # return response_times, deadline_miss_prob_upper_jeffreys
+    return response_times, deadline_miss_prob_upper_agresti_coull

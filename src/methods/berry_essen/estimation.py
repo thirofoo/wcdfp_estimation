@@ -4,7 +4,7 @@ from tqdm import tqdm
 from common.parameters import ABNORMAL_MODE_PROB
 
 
-def calculate_response_time_by_berry_essen(taskset, target_job, A=1.0, upper=True, log_flag=False):
+def calculate_response_time_by_berry_essen(taskset, target_job, A=1.0, upper=True, log_flag=False, seed=0):
     """
     Calculate WCDFP using Berry-Essen theorem.
 
@@ -14,7 +14,10 @@ def calculate_response_time_by_berry_essen(taskset, target_job, A=1.0, upper=Tru
     :param upper: If True, calculate upper bound; otherwise, calculate lower bound
     :param log_flag: If True, logs detailed intermediate results
     :return: WCDFP and (x_values, berry_essen_cdf_values)
+    :param seed: Random seed for reproducibility
     """
+    np.random.seed(seed)  # Set the random seed for reproducibility
+
     absolute_deadline = target_job.absolute_deadline
     rho_sum = 0
     alpha_sigma_sum = 0
