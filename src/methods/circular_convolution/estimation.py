@@ -19,6 +19,12 @@ def convolve_and_truncate(pdf1, pdf2, size):
     return truncated_pdf, exceed_prob
 
 
+def convolve(pdf1, pdf2):
+    convolved_pdf = fftconvolve(pdf1, pdf2, mode='full')
+    truncated_pdf = np.maximum(convolved_pdf, 0.0)
+    return truncated_pdf
+
+
 def calculate_response_time_by_conv(taskset, target_job, log_flag=False, traditional_ci=False):
     """
     Calculate response time distribution using convolution with truncation.
@@ -86,24 +92,30 @@ def calculate_response_time_with_doubling(taskset, target_job, log_flag=False):
     :return: Response time distribution and WCDFP
     """
     size = int(target_job.absolute_deadline / MINIMUM_TIME_UNIT) + 1
-    response_time = np.zeros(size)
-    response_time[0] = 1.0  # Initial PDF for response time
-    wcdfp = 0.0  # Initialize WCDFP as 0.0
+    response_time = np.array([1.0])  # Initial PDF for response time
+    wcdfp = 0.0
 
     for task in tqdm(taskset.tasks, desc="Processing tasks", disable=not log_flag):
         release_count = int(np.ceil((target_job.task.relative_deadline + task.relative_deadline) / task.minimum_inter_arrival_time))
         if target_job.task == task:
             release_count = 1
-        current_pdf = task.original_pdf_values / np.sum(task.original_pdf_values)
 
+        current_pdf = task.original_pdf_values / np.sum(task.original_pdf_values)
         while release_count > 0:
             if release_count % 2 == 1:
-                response_time, exceed_prob = convolve_and_truncate(response_time, current_pdf, size)
-                wcdfp += exceed_prob
-            current_pdf, _ = convolve_and_truncate(current_pdf, current_pdf, size)
+                # response_time, exceed_prob = convolve_and_truncate(response_time, current_pdf, size)
+                # wcdfp += exceed_prob
+                response_time = convolve(response_time, current_pdf)
+
+            # current_pdf, _ = convolve_and_truncate(current_pdf, current_pdf, size)
+            current_pdf = convolve(current_pdf, current_pdf)
+            current_pdf /= np.sum(current_pdf)
+            response_time /= np.sum(response_time)
             release_count //= 2
 
+    wcdfp = np.sum(response_time[size:])
     if log_flag:
         print(f"Final WCDFP: {wcdfp}")
         print(f"Sum of response_time: {np.sum(response_time)}")
+
     return response_time, wcdfp

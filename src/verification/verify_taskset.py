@@ -12,7 +12,7 @@ def verify_taskset():
     # ==================== Generate Taskset using TaskSet class ==================== #
     seed = 3
     task_num = 100
-    utilization_rate = 0.60
+    utilization_rate = 0.65
 
     # Set output directory
     output_dir = "src/verification/output"
