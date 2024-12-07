@@ -31,6 +31,10 @@ class TaskSet:
                 # Sort jobs at each time step by priority (RMS)
                 jobs_at_t.sort(reverse=True)
                 self.arrival_times.append(t)
+        
+        # Set the target job as the lowest-priority job at time 0
+        if self.timeline[0]:
+            self.target_job = self.timeline[0][-1]  # Lowest priority job at time 0
 
     def generate_task_set(self):
         """
@@ -40,7 +44,6 @@ class TaskSet:
         execution_rates = dirichlet_dist * self.utilization_rate
 
         task_influences = []
-        max_deadline = 0
 
         # Calculate task parameters
         for rate in execution_rates:
@@ -48,7 +51,6 @@ class TaskSet:
                 np.exp(np.random.uniform(np.log(10), np.log(1000)))
             )
             relative_deadline = minimum_inter_arrival_time
-            max_deadline = max(max_deadline, relative_deadline)
 
             wcet = calculate_wcet(minimum_inter_arrival_time, rate)
             influence = minimum_inter_arrival_time * rate
@@ -64,14 +66,18 @@ class TaskSet:
         # Sort tasks by RMS priority (shorter period = higher priority)
         self.tasks.sort(key=lambda x: x.minimum_inter_arrival_time)
 
-        # Create the timeline
-        timeline_size = int((max_deadline + 1) / MINIMUM_TIME_UNIT)
-        self.timeline = [[] for _ in range(timeline_size)]
+        # Use the relative_deadline of the lowest-priority task
+        lowest_priority_relative_deadline = self.tasks[-1].relative_deadline
 
+        # Create the timeline
+        timeline_size = int((lowest_priority_relative_deadline + 1) / MINIMUM_TIME_UNIT)
+        self.timeline = [[] for _ in range(timeline_size)]
+        
         for task in self.tasks:
-            t = 0
-            while t <= max_deadline:
-                job = Job(task, t)
-                timeline_index = int(t / MINIMUM_TIME_UNIT)
-                self.timeline[timeline_index].append(job)
+            t = -task.relative_deadline
+            while t <= lowest_priority_relative_deadline:
+                if t >= 0:
+                    job = Job(task, t)
+                    timeline_index = int(t / MINIMUM_TIME_UNIT)
+                    self.timeline[timeline_index].append(job)
                 t += task.minimum_inter_arrival_time

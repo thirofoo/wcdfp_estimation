@@ -3,52 +3,66 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 def plot_wcdfp_comparison():
-    # method_name_1 = "berry_essen"
-    # method_name_1 = "monte_carlo"
-    method_name_1 = "convolution"
-    method_name_2 = "convolution_doubling"
-    prefix = "src/evaluation/output/100_0.65_0.001"
-    csv_path_1 = f"{prefix}/evaluation_{method_name_1.lower()}.csv"
-    csv_path_2 = f"{prefix}/evaluation_{method_name_2.lower()}.csv"
-    output_path = f"{prefix}/wcdfp_comparison_{method_name_1.lower()}_{method_name_2.lower()}.png"
+    """
+    Compare WCDFP values between all pairs of methods and generate comparison plots.
+    """
+    methods = ["berry_essen", "monte_carlo", "convolution", "convolution_doubling"]
+    # prefix = "src/evaluation/output/100_0.65_0.001"
+    prefix = "src/evaluation/output/10_0.6_0.001"
 
-    # Read CSV files
-    data_1 = pd.read_csv(csv_path_1)
-    data_2 = pd.read_csv(csv_path_2)
+    for i in range(len(methods)):
+        for j in range(i + 1, len(methods)):
+            method_name_1 = methods[i]
+            method_name_2 = methods[j]
 
-    # Merge data on TaskSetID
-    merged_data = pd.merge(
-        data_1[["TaskSetID", "WCDFP"]],
-        data_2[["TaskSetID", "WCDFP"]],
-        on="TaskSetID",
-        suffixes=(f"_{method_name_1.lower()}", f"_{method_name_2.lower()}")
-    )
+            # Define paths for the CSV files and the output plot
+            csv_path_1 = f"{prefix}/evaluation_{method_name_1.lower()}.csv"
+            csv_path_2 = f"{prefix}/evaluation_{method_name_2.lower()}.csv"
+            output_path = f"{prefix}/wcdfp_comparison_{method_name_1.lower()}_{method_name_2.lower()}.png"
 
-    # Extract WCDFP values
-    wcdfp_1 = merged_data[f"WCDFP_{method_name_1.lower()}"]
-    wcdfp_2 = merged_data[f"WCDFP_{method_name_2.lower()}"]
+            # Read CSV files
+            try:
+                data_1 = pd.read_csv(csv_path_1)
+                data_2 = pd.read_csv(csv_path_2)
+            except FileNotFoundError as e:
+                print(f"File not found for comparison: {e}")
+                continue
 
-    # Create the plot
-    plt.figure(figsize=(8, 8))
-    plt.scatter(wcdfp_1, wcdfp_2, color="orange", label="WCDFP Points")
-    plt.plot([min(wcdfp_1.min(), wcdfp_2.min()), max(wcdfp_1.max(), wcdfp_2.max())], 
-             [min(wcdfp_1.min(), wcdfp_2.min()), max(wcdfp_1.max(), wcdfp_2.max())],
-             color="blue", linestyle="--", label="y = x (Reference Line)")  # Reference line y=x
+            # Merge data on TaskSetID
+            merged_data = pd.merge(
+                data_1[["TaskSetID", "WCDFP"]],
+                data_2[["TaskSetID", "WCDFP"]],
+                on="TaskSetID",
+                suffixes=(f"_{method_name_1.lower()}", f"_{method_name_2.lower()}")
+            )
 
-    # Configure plot
-    plt.xscale("log")  # Set x-axis to log scale
-    plt.yscale("log")  # Set y-axis to log scale
-    plt.xlabel(f"{method_name_1} WCDFP (log scale)")
-    plt.ylabel(f"{method_name_2} WCDFP (log scale)")
-    plt.title(f"WCDFP Comparison: {method_name_1} vs {method_name_2}")
-    plt.legend()
-    plt.grid(True, which="both", linestyle="--", linewidth=0.5)
-    plt.axis("equal")  # Ensure equal scaling for x and y axes
+            # Extract WCDFP values
+            wcdfp_1 = merged_data[f"WCDFP_{method_name_1.lower()}"]
+            wcdfp_2 = merged_data[f"WCDFP_{method_name_2.lower()}"]
 
-    # Save the plot
-    plt.savefig(output_path)
-    plt.close()
-    print(f"Plot saved to {output_path}")
+            # Create the plot
+            plt.figure(figsize=(8, 8))
+            plt.scatter(wcdfp_1, wcdfp_2, color="orange", label="WCDFP Points")
+            plt.plot(
+                [min(wcdfp_1.min(), wcdfp_2.min()), max(wcdfp_1.max(), wcdfp_2.max())], 
+                [min(wcdfp_1.min(), wcdfp_2.min()), max(wcdfp_1.max(), wcdfp_2.max())],
+                color="blue", linestyle="--", label="y = x (Reference Line)"
+            )  # Reference line y=x
+
+            # Configure plot
+            plt.xscale("log")  # Set x-axis to log scale
+            plt.yscale("log")  # Set y-axis to log scale
+            plt.xlabel(f"{method_name_1} WCDFP (log scale)")
+            plt.ylabel(f"{method_name_2} WCDFP (log scale)")
+            plt.title(f"WCDFP Comparison: {method_name_1} vs {method_name_2}")
+            plt.legend()
+            plt.grid(True, which="both", linestyle="--", linewidth=0.5)
+            plt.axis("equal")  # Ensure equal scaling for x and y axes
+
+            # Save the plot
+            plt.savefig(output_path)
+            plt.close()
+            print(f"Plot saved to {output_path}")
 
 
 def plot_execution_time_boxplot():

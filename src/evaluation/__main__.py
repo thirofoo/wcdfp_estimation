@@ -11,16 +11,25 @@ from common.taskset import TaskSet
 from common.parameters import MINIMUM_TIME_UNIT, BERRY_ESSEN_COEFFICIENT as A
 
 # Parameters
-total_taskset = 5000
-log_flag = False
-plot_flag = False
-task_num = 100
-utilization_rate = 0.65
-thread_num = 16
-false_probability = 0.000001
-error_margin = 0.01
+default_total_taskset = 50
+default_log_flag = False
+default_plot_flag = False
+default_task_num = 100
+default_utilization_rate = 0.65
+default_thread_num = 16
+default_false_probability = 0.000001
+default_error_margin = 0.01
 
-def evaluate_monte_carlo():
+def evaluate_monte_carlo(
+    task_num=default_task_num,
+    utilization_rate=default_utilization_rate,
+    total_taskset=default_total_taskset,
+    thread_num=default_thread_num,
+    false_probability=default_false_probability,
+    error_margin=default_error_margin,
+    log_flag=default_log_flag,
+    plot_flag=default_plot_flag,
+):
     # Calculate required sample size
     samples = required_sample_size_binomial(error_margin, false_probability)
 
@@ -60,7 +69,7 @@ def evaluate_monte_carlo():
             seed = i * thread_num
             response_times_mc, wcdfp_mc = calculate_response_time_distribution(
                 taskset=taskset,
-                target_job=taskset.timeline[0][-1],
+                target_job=taskset.target_job,
                 false_probability=false_probability,
                 thread_num=thread_num,
                 log_flag=log_flag,
@@ -90,20 +99,20 @@ def evaluate_monte_carlo():
             pd.DataFrame([result]).to_csv(results_path, mode='a', index=False, header=not os.path.exists(results_path))
 
             # Plot and save figure
-            sorted_times_mc = np.sort(response_times_mc)
-            monte_carlo_cdf_values = np.arange(1, len(sorted_times_mc) + 1) / len(sorted_times_mc)
-            plt.figure(figsize=(10, 6))
-            plt.step(sorted_times_mc, monte_carlo_cdf_values, label="Monte Carlo CDF", where="post")
-            deadline = taskset.timeline[0][-1].absolute_deadline
-            plt.axvline(x=deadline, color="red", linestyle="--", label="Deadline")
-            plt.xlabel("Execution Time")
-            plt.ylabel("Cumulative Distribution Function")
-            plt.title(f"Monte Carlo CDF for TaskSet {i + 1}")
-            plt.legend()
-            plt.grid(True)
-            plot_path = os.path.join(output_dir, f"monte_carlo_cdf_{i + 1}.png")
-            plt.savefig(plot_path)
-            plt.close()
+            # sorted_times_mc = np.sort(response_times_mc)
+            # monte_carlo_cdf_values = np.arange(1, len(sorted_times_mc) + 1) / len(sorted_times_mc)
+            # plt.figure(figsize=(10, 6))
+            # plt.step(sorted_times_mc, monte_carlo_cdf_values, label="Monte Carlo CDF", where="post")
+            # deadline = taskset.timeline[0][-1].absolute_deadline
+            # plt.axvline(x=deadline, color="red", linestyle="--", label="Deadline")
+            # plt.xlabel("Execution Time")
+            # plt.ylabel("Cumulative Distribution Function")
+            # plt.title(f"Monte Carlo CDF for TaskSet {i + 1}")
+            # plt.legend()
+            # plt.grid(True)
+            # plot_path = os.path.join(output_dir, f"monte_carlo_cdf_{i + 1}.png")
+            # plt.savefig(plot_path)
+            # plt.close()
 
             progress_bar.update(1)
 
@@ -111,7 +120,12 @@ def evaluate_monte_carlo():
     print("\nMonte Carlo evaluation completed.")
 
 
-def evaluate_berry_essen():
+def evaluate_berry_essen(
+    task_num=default_task_num,
+    utilization_rate=default_utilization_rate,
+    total_taskset=default_total_taskset,
+    log_flag=default_log_flag,
+):
     # Output directory for results
     output_dir = f"src/evaluation/output/{task_num}_{utilization_rate}_{MINIMUM_TIME_UNIT}"
     os.makedirs(output_dir, exist_ok=True)
@@ -146,7 +160,7 @@ def evaluate_berry_essen():
             start_time = time.time()
             wcdfp_be, (x_values, berry_essen_cdf_values) = calculate_response_time_by_berry_essen(
                 taskset=taskset,
-                target_job=taskset.timeline[0][-1],
+                target_job=taskset.target_job,
                 A=A,
                 upper=True,
                 log_flag=log_flag,
@@ -186,7 +200,13 @@ def evaluate_berry_essen():
     print("\nBerry-Essen evaluation completed.")
 
 
-def evaluate_convolution_doubling():
+def evaluate_convolution_doubling(
+    task_num=default_task_num,
+    utilization_rate=default_utilization_rate,
+    total_taskset=default_total_taskset,
+    thread_num=default_thread_num,
+    log_flag=default_log_flag,
+):
     # Output directory for results
     output_dir = f"src/evaluation/output/{task_num}_{utilization_rate}_{MINIMUM_TIME_UNIT}"
     os.makedirs(output_dir, exist_ok=True)
@@ -223,7 +243,7 @@ def evaluate_convolution_doubling():
             start_time = time.time()
             response_time, wcdfp_conv = calculate_response_time_with_doubling(
                 taskset=taskset,
-                target_job=taskset.timeline[0][-1],
+                target_job=taskset.target_job,
                 log_flag=log_flag,
             )
             elapsed_time = time.time() - start_time
@@ -263,7 +283,13 @@ def evaluate_convolution_doubling():
     print("\nConvolution Doubling evaluation completed.")
 
 
-def evaluate_convolution():
+def evaluate_convolution(
+    task_num=default_task_num,
+    utilization_rate=default_utilization_rate,
+    total_taskset=default_total_taskset,
+    thread_num=default_thread_num,
+    log_flag=default_log_flag,
+):
     # Output directory for results
     output_dir = f"src/evaluation/output/{task_num}_{utilization_rate}_{MINIMUM_TIME_UNIT}"
     os.makedirs(output_dir, exist_ok=True)
@@ -300,7 +326,7 @@ def evaluate_convolution():
             start_time = time.time()
             response_time, wcdfp_conv = calculate_response_time_by_conv(
                 taskset=taskset,
-                target_job=taskset.timeline[0][-1],
+                target_job=taskset.target_job,
                 log_flag=log_flag,
             )
             elapsed_time = time.time() - start_time
@@ -338,3 +364,21 @@ def evaluate_convolution():
 
     print(f"Results saved incrementally to {results_path}")
     print("\nConvolution evaluation completed.")
+
+
+def evaluate_all_methods():
+    """
+    Evaluate all methods for all combinations of task_num and utilization_rate.
+    """
+    all_task_num = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100] 
+    all_utilization_rate = [0.60, 0.65, 0.70] 
+
+    for t_num in all_task_num:  # Iterate over task numbers
+        for u_rate in all_utilization_rate:  # Iterate over utilization rates
+            print(f"Evaluating for TaskNum: {t_num}, UtilizationRate: {u_rate}")
+
+            # Pass the current parameters to each evaluation function
+            evaluate_monte_carlo(task_num=t_num, utilization_rate=u_rate)
+            evaluate_berry_essen(task_num=t_num, utilization_rate=u_rate)
+            evaluate_convolution_doubling(task_num=t_num, utilization_rate=u_rate)
+            evaluate_convolution(task_num=t_num, utilization_rate=u_rate)

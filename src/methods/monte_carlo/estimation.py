@@ -25,7 +25,7 @@ def required_sample_size_binomial(error_margin, false_probability):
     return np.ceil(required_n)
 
 
-def calculate_response_time(taskset, target_job, log_flag=False, traditional_ci=False):
+def calculate_response_time(taskset, target_job, log_flag=False):
     """
     Calculate the response time of a target job using a timeline simulation.
 
@@ -47,16 +47,12 @@ def calculate_response_time(taskset, target_job, log_flag=False, traditional_ci=
         boundary += 1
 
     # Calculate initial carry-in at time t = 0
-    carry_in = target_job.task.get_execution_time()
+    carry_in = 0
     for job in timeline[arrival_times[0]]:
         # Only consider jobs with priority higher or equal to the target job
         if job < target_job:
             break
         carry_in += job.task.get_execution_time()
-
-    # If traditional carry-in mode is enabled, set carry-in to 0
-    if traditional_ci:
-        carry_in = 0
 
     if log_flag:
         print(f"carry_in: {carry_in}")
@@ -67,17 +63,17 @@ def calculate_response_time(taskset, target_job, log_flag=False, traditional_ci=
     idx = boundary
     total_next_cost = 0  # Cost from future jobs
     while idx < len(arrival_times) and arrival_times[idx] * MINIMUM_TIME_UNIT <= target_job.absolute_deadline:
-        # Iterate through all jobs arriving at the current timeline index
-        for job in timeline[arrival_times[idx]]:
-            if job < target_job or job == target_job:
-                continue  # Skip jobs with lower priority or the same job
-            total_next_cost += job.task.get_execution_time()
-
         # If the carry-in and next cost fit within the current interval, return response time
         if carry_in + total_next_cost <= arrival_times[idx] * MINIMUM_TIME_UNIT - arrival_times[boundary] * MINIMUM_TIME_UNIT:
             if log_flag:
                 print("\n========== Scheduling Succeeded !! ==========\n")
             return carry_in + total_next_cost
+
+        # Iterate through all jobs arriving at the current timeline index
+        for job in timeline[arrival_times[idx]]:
+            if job < target_job or job == target_job:
+                continue  # Skip jobs with lower priority or the same job
+            total_next_cost += job.task.get_execution_time()
 
         idx += 1  # Move to the next arrival time
 

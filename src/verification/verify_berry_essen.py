@@ -19,9 +19,9 @@ def verify_berry_essen():
     os.makedirs(output_dir, exist_ok=True)
 
     # Log details about the lowest priority task's job
-    target_job = taskset.timeline[0][-1]
-    print(f"timeline[0][-1] absolute_deadline : {target_job.absolute_deadline}")
-    print(f"timeline[0][-1] execution_time : {target_job.task.get_execution_time()}\n")
+    target_job = taskset.target_job
+    print(f"lowest priority absolute_deadline : {target_job.absolute_deadline}")
+    print(f"lowest priority execution_time : {target_job.task.get_execution_time()}\n")
 
     # Calculate response time using Berry-Essen (upper bound)
     print("Calculating response time using Berry-Essen (Upper)...")
