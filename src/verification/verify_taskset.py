@@ -4,6 +4,7 @@ import numpy as np
 from common.taskset import TaskSet
 from common.utils import calculate_expected_execution_time
 from contextlib import redirect_stdout
+from tqdm import tqdm
 
 def verify_taskset():
     """
@@ -83,5 +84,42 @@ def verify_taskset():
         log_file.write(f"Average utilization rate (based on sample): {sample_mean / taskset.tasks[task_idx].minimum_inter_arrival_time}\n")
         log_file.write(f"Average utilization rate (based on true mean): {true_mean / taskset.tasks[task_idx].minimum_inter_arrival_time}\n")
 
-if __name__ == "__main__":
-    verify_taskset()
+
+def verify_taskset_consistency():
+    """
+    Generate task sets with different configurations and verify consistency of relative deadlines
+    and periods for all tasks.
+    Log any discrepancies.
+    """
+    output_dir = "src/verification/output"
+    os.makedirs(output_dir, exist_ok=True)
+
+    log_path = os.path.join(output_dir, "taskset_consistency_log.txt")
+    with open(log_path, "w") as log_file:
+        
+        # Configurations
+        utilization_rates = [0.60, 0.65, 0.70]
+        task_counts = range(10, 101, 10)
+        seed_range = range(1, 51)
+
+        total_iterations = len(utilization_rates) * len(task_counts) * len(seed_range)
+
+        # Loop through configurations with progress tracking
+        with tqdm(total=total_iterations, desc="Verifying Tasksets") as pbar:
+            for utilization_rate in utilization_rates:
+                for task_count in task_counts:
+                    for seed in seed_range:
+
+                        # Generate taskset
+                        taskset = TaskSet(task_num=task_count, utilization_rate=utilization_rate, seed=seed)
+
+                        # Check consistency for each task
+                        for idx, task in enumerate(taskset.tasks):
+                            if task.relative_deadline != task.minimum_inter_arrival_time:
+                                log_file.write(
+                                    f"Discrepancy Found: Utilization={utilization_rate}, TaskCount={task_count}, Seed={seed}, "
+                                    f"TaskIndex={idx}, RelativeDeadline={task.relative_deadline}, Period={task.minimum_inter_arrival_time}\n"
+                                )
+                        pbar.update(1)
+
+    print(f"Taskset consistency verification log saved to {log_path}")

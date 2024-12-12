@@ -22,8 +22,11 @@ evaluate_berry_essen = "evaluation:evaluate_berry_essen"
 evaluate_convolution = "evaluation:evaluate_convolution"
 evaluate_convolution_doubling = "evaluation:evaluate_convolution_doubling"
 evaluate_all = "evaluation:evaluate_all_methods"
+evaluate_one_taskset_all = "evaluation:plot_normalized_response_times"
+
 plot_wcdfp_comparison = "evaluation:plot_wcdfp_comparison"
 plot_execution_time = "evaluation:plot_execution_time_boxplot"
+
 verify_taskset = "verification.verify_taskset:verify_taskset"
 verify_monte_carlo = "verification.verify_monte_carlo:verify_monte_carlo"
 verify_convolution = "verification.verify_convolution:verify_convolution"

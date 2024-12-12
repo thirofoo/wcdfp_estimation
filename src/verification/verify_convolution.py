@@ -3,7 +3,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 from common.parameters import MINIMUM_TIME_UNIT
 from common.taskset import TaskSet
-from methods.circular_convolution.estimation import calculate_response_time_by_conv, compute_response_time_with_doubling
+from methods.circular_convolution.estimation import calculate_response_time_by_conv, calculate_response_time_with_doubling
+
 
 def plot_response_time_cdfs(cdf_conv, cdf_doubling, deadline, output_dir):
     """
@@ -14,7 +15,14 @@ def plot_response_time_cdfs(cdf_conv, cdf_doubling, deadline, output_dir):
     :param deadline: Absolute deadline of the target job
     :param output_dir: Directory to save the plot
     """
-    time_indices = np.arange(len(cdf_conv)) * MINIMUM_TIME_UNIT
+    # Ensure all arrays are the same length
+    min_length = min(len(cdf_conv), len(cdf_doubling))
+    cdf_conv = cdf_conv[:min_length]
+    cdf_doubling = cdf_doubling[:min_length]
+    time_indices = np.arange(min_length) * MINIMUM_TIME_UNIT
+
+    # Log the lengths for debugging
+    print(f"Length of time_indices: {len(time_indices)}, Length of cdf_conv: {len(cdf_conv)}, Length of cdf_doubling: {len(cdf_doubling)}")
 
     plt.figure(figsize=(10, 6))
     plt.plot(time_indices, cdf_conv, label="Convolution CDF", color="blue", linestyle="--", drawstyle="steps-mid")
@@ -32,14 +40,15 @@ def plot_response_time_cdfs(cdf_conv, cdf_doubling, deadline, output_dir):
     print(f"Response Time CDFs plot saved to {plot_path}")
     plt.close()
 
+
 def verify_convolution():
     """
     Verify response time calculation using convolution for the lowest priority task in a TaskSet.
     """
     # Create TaskSet
-    seed = 3
-    task_num = 100
-    utilization_rate = 0.60
+    seed = 13
+    task_num = 10
+    utilization_rate = 0.70
     taskset = TaskSet(task_num, utilization_rate, seed=seed)
 
     # Prepare output directory
@@ -59,12 +68,9 @@ def verify_convolution():
 
     # Calculate response time using doubling
     print("Calculating response time using doubling convolution...")
-    response_time_doubling, wcdfp_doubling = compute_response_time_with_doubling(taskset, target_job)
+    response_time_doubling, wcdfp_doubling = calculate_response_time_with_doubling(taskset, target_job)
     cdf_doubling = np.cumsum(response_time_doubling) / np.sum(response_time_doubling)
     print(f"WCDFP (Doubling): {wcdfp_doubling}")
 
     # Plot and save CDFs
     plot_response_time_cdfs(cdf_conv, cdf_doubling, target_job.absolute_deadline, output_dir)
-
-if __name__ == "__main__":
-    verify_convolution()

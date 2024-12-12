@@ -71,7 +71,3 @@ def verify_berry_essen():
     plt.savefig(plot_path)
     print(f"Berry-Essen CDF plot (with bounds) saved to {plot_path}")
     plt.close()
-
-
-if __name__ == "__main__":
-    verify_berry_essen()

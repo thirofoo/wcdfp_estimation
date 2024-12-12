@@ -23,7 +23,7 @@ class Task:
         :param theta: Parameter for tilted distribution
         """
         self.wcet = round_min_unit(wcet)
-        self.relative_deadline = relative_deadline
+        self.relative_deadline = round_min_unit(relative_deadline)
         self.minimum_inter_arrival_time = round_min_unit(minimum_inter_arrival_time)
         self.theta = theta
 

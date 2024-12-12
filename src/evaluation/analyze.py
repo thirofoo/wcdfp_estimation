@@ -1,101 +1,141 @@
 import pandas as pd
 import matplotlib.pyplot as plt
-import numpy as np
+
+output_prefix = "src/evaluation/output"
+prefix_template = "src/evaluation/output/{task_count}_{wcdfp}_{epsilon}"
+
+def plot_execution_time_boxplot():
+    """
+    Generate a grid of boxplots showing execution time distribution
+    for different task counts (10 to 100) and utilization thresholds (0.6, 0.65, 0.7).
+    The x-axis represents task counts, and the y-axis represents utilization thresholds.
+    Each boxplot shows the execution time distribution for all methods, with method names grouped.
+    """
+    task_counts = range(10, 101, 10)  # Task counts from 10 to 100 in steps of 10
+    util_rate_values = [0.6, 0.65, 0.7]  # Utilization thresholds
+    epsilon = "0.001"  # Fixed epsilon value
+
+    method_names = ["berry_essen", "convolution_doubling", "convolution", "monte_carlo"]
+
+    fig, axes = plt.subplots(len(util_rate_values), len(task_counts), figsize=(30, 15), sharex=True, sharey=True)
+
+    for row_idx, wcdfp in enumerate(util_rate_values):
+        for col_idx, task_count in enumerate(task_counts):
+            ax = axes[row_idx, col_idx]
+
+            # Combine execution times for all methods
+            combined_execution_times = []
+            for method_name in method_names:
+                prefix = prefix_template.format(task_count=task_count, wcdfp=wcdfp, epsilon=epsilon)
+                csv_path = f"{prefix}/evaluation_{method_name.lower()}.csv"
+                try:
+                    data = pd.read_csv(csv_path)
+                    if "ExecutionTime" not in data.columns:
+                        raise ValueError(f"The file {csv_path} does not contain an 'ExecutionTime' column.")
+
+                    filtered_times = data["ExecutionTime"][data["ExecutionTime"] >= 0]
+                    combined_execution_times.append(filtered_times)
+                except FileNotFoundError:
+                    print(f"File not found: {csv_path}")
+                    combined_execution_times.append([])
+
+            # Plot boxplot for the combined execution times
+            ax.boxplot(
+                combined_execution_times,
+                labels=None,  # Remove individual method labels to declutter
+                vert=True,
+                patch_artist=True,
+                whis=[0, 100]
+            )
+            ax.set_yscale("log")
+            ax.grid(axis="y", linestyle="--", linewidth=0.5)
+
+            if row_idx == len(util_rate_values) - 1:
+                ax.set_xlabel(f"{task_count}\n({', '.join([str(i + 1) for i in range(len(method_names))])})", fontsize=12)  # Task count with method indices
+            if col_idx == 0:
+                ax.set_ylabel(f"Utilization: {wcdfp}", fontsize=12)
+
+    # Add a single x-axis and y-axis label
+    fig.text(0.5, 0.02, "Task Count (Methods: 1. berry_essen, 2. convolution_doubling, 3. convolution, 4. monte_carlo)", ha="center", va="center", fontsize=16)
+    fig.text(0.02, 0.5, "Utilization", ha="center", va="center", rotation="vertical", fontsize=16)
+
+    # Adjust layout and save the figure
+    plt.tight_layout(rect=[0.05, 0.05, 1, 0.95])
+    output_path = f"{output_prefix}/execution_time_boxplot_high_res.png"
+    plt.savefig(output_path, dpi=300)
+    plt.close()
+    print(f"High-resolution boxplot saved to {output_path}")
+
 
 def plot_wcdfp_comparison():
     """
-    Compare WCDFP values between all pairs of methods and generate comparison plots.
+    Plot all WCDFP data points for each method pair across all task counts and utilization thresholds
+    and generate comparison plots with y = x as a reference line.
     """
-    methods = ["berry_essen", "monte_carlo", "convolution", "convolution_doubling"]
-    # prefix = "src/evaluation/output/100_0.65_0.001"
-    prefix = "src/evaluation/output/10_0.6_0.001"
+    task_counts = range(10, 11, 10)  # Task counts from 10 to 100 in steps of 10
+    util_rate_values = [0.6]  # Utilization thresholds
+    epsilon = "0.001"  # Fixed epsilon value
+    method_names = ["berry_essen", "convolution_doubling", "convolution", "monte_carlo"]
 
-    for i in range(len(methods)):
-        for j in range(i + 1, len(methods)):
-            method_name_1 = methods[i]
-            method_name_2 = methods[j]
+    for i in range(len(method_names)):
+        for j in range(i + 1, len(method_names)):
+            method_1 = method_names[i]
+            method_2 = method_names[j]
 
-            # Define paths for the CSV files and the output plot
-            csv_path_1 = f"{prefix}/evaluation_{method_name_1.lower()}.csv"
-            csv_path_2 = f"{prefix}/evaluation_{method_name_2.lower()}.csv"
-            output_path = f"{prefix}/wcdfp_comparison_{method_name_1.lower()}_{method_name_2.lower()}.png"
+            wcdfp_data = []
+            for task_count in task_counts:
+                for wcdfp in util_rate_values:
+                    util_rate_values_per_method = {}
+                    for method_name in [method_1, method_2]:
+                        prefix = prefix_template.format(task_count=task_count, wcdfp=wcdfp, epsilon=epsilon)
+                        csv_path = f"{prefix}/evaluation_{method_name.lower()}.csv"
+                        try:
+                            data = pd.read_csv(csv_path)
+                            if "WCDFP" not in data.columns:
+                                raise ValueError(f"The file {csv_path} does not contain a 'WCDFP' column.")
+                            util_rate_values_per_method[method_name] = data["WCDFP"].values
+                        except FileNotFoundError:
+                            print(f"File not found: {csv_path}")
+                            util_rate_values_per_method[method_name] = None
 
-            # Read CSV files
-            try:
-                data_1 = pd.read_csv(csv_path_1)
-                data_2 = pd.read_csv(csv_path_2)
-            except FileNotFoundError as e:
-                print(f"File not found for comparison: {e}")
-                continue
+                    wcdfp_1 = util_rate_values_per_method.get(method_1)
+                    wcdfp_2 = util_rate_values_per_method.get(method_2)
 
-            # Merge data on TaskSetID
-            merged_data = pd.merge(
-                data_1[["TaskSetID", "WCDFP"]],
-                data_2[["TaskSetID", "WCDFP"]],
-                on="TaskSetID",
-                suffixes=(f"_{method_name_1.lower()}", f"_{method_name_2.lower()}")
-            )
+                    if method_2 == "monte_carlo" and method_1 == "convolution" and len(wcdfp_1[wcdfp_2 < wcdfp_1]) > 0:
+                        idx = wcdfp_2 < wcdfp_1
+                        print(f"Task Count: {task_count}, Utilization: {wcdfp}, Method 1: {method_1}, Method 2: {method_2}")
+                        print(f"WCDFP (Convolution): {wcdfp_1[idx]}")
+                        print(f"WCDFP (Monte Carlo): {wcdfp_2[idx]}")
 
-            # Extract WCDFP values
-            wcdfp_1 = merged_data[f"WCDFP_{method_name_1.lower()}"]
-            wcdfp_2 = merged_data[f"WCDFP_{method_name_2.lower()}"]
+                    if wcdfp_1 is not None and wcdfp_2 is not None:
+                        min_len = min(len(wcdfp_1), len(wcdfp_2))
+                        if len(wcdfp_1) != len(wcdfp_2):
+                            print("Warning: Utilization values are not equal")
+                            print(f"len(wcdfp_1): {len(wcdfp_1)}, len(wcdfp_2): {len(wcdfp_2)}")
+                        wcdfp_data.extend(zip(wcdfp_1[:min_len], wcdfp_2[:min_len]))
+
+            # Extract values for plotting
+            x_vals = [x[0] for x in wcdfp_data]
+            y_vals = [x[1] for x in wcdfp_data]
 
             # Create the plot
             plt.figure(figsize=(8, 8))
-            plt.scatter(wcdfp_1, wcdfp_2, color="orange", label="WCDFP Points")
-            plt.plot(
-                [min(wcdfp_1.min(), wcdfp_2.min()), max(wcdfp_1.max(), wcdfp_2.max())], 
-                [min(wcdfp_1.min(), wcdfp_2.min()), max(wcdfp_1.max(), wcdfp_2.max())],
-                color="blue", linestyle="--", label="y = x (Reference Line)"
-            )  # Reference line y=x
+            plt.scatter(x_vals, y_vals, color="orange", label="WCDFP Points")
+            min_val = min(min(x_vals), min(y_vals))
+            max_val = max(max(x_vals), max(y_vals))
+            plt.plot([min_val, max_val], [min_val, max_val], linestyle="--", color="blue", label="y = x (Reference Line)")
 
             # Configure plot
-            plt.xscale("log")  # Set x-axis to log scale
-            plt.yscale("log")  # Set y-axis to log scale
-            plt.xlabel(f"{method_name_1} WCDFP (log scale)")
-            plt.ylabel(f"{method_name_2} WCDFP (log scale)")
-            plt.title(f"WCDFP Comparison: {method_name_1} vs {method_name_2}")
+            plt.xscale("log")
+            plt.yscale("log")
+            plt.xlabel(f"{method_1} WCDFP (log scale)")
+            plt.ylabel(f"{method_2} WCDFP (log scale)")
+            plt.title(f"WCDFP Ratios: {method_1} vs {method_2}")
             plt.legend()
             plt.grid(True, which="both", linestyle="--", linewidth=0.5)
-            plt.axis("equal")  # Ensure equal scaling for x and y axes
 
             # Save the plot
-            plt.savefig(output_path)
+            output_path = f"{output_prefix}/comparison_ratios_{method_1.lower()}_{method_2.lower()}.png"
+            plt.savefig(output_path, dpi=300)
             plt.close()
             print(f"Plot saved to {output_path}")
-
-
-def plot_execution_time_boxplot():
-    method_names = ["berry_essen", "convolution_doubling", "monte_carlo"]
-    prefix = "src/evaluation/output/100_0.65_0.001"
-    
-    # Generate CSV paths for each method name
-    csv_paths = [f"{prefix}/evaluation_{method_name.lower()}.csv" for method_name in method_names]
-    output_path = f"{prefix}/execution_time_distribution.png"
-
-    # Read execution times from each CSV file
-    execution_times = []
-    for csv_path in csv_paths:
-        data = pd.read_csv(csv_path)
-        if "ExecutionTime" not in data.columns:
-            raise ValueError(f"The file {csv_path} does not contain an 'ExecutionTime' column.")
-        
-        filtered_times = data["ExecutionTime"][data["ExecutionTime"] >= 0]
-        execution_times.append(filtered_times)
-
-    # Create the boxplot
-    plt.figure(figsize=(10, 6))
-    # plt.boxplot(execution_times, labels=method_names, vert=True, patch_artist=True)
-    plt.boxplot(execution_times, labels=method_names, vert=True, patch_artist=True, whis=[0, 100])
-    plt.yscale("log")  # Set log scale for Y-axis
-
-    # Configure plot
-    plt.xlabel("Methods")
-    plt.ylabel("Execution Time (seconds)")
-    plt.title("Execution Time Distribution Across Methods")
-    plt.grid(axis="y", linestyle="--", linewidth=0.5)
-
-    # Save the plot
-    plt.savefig(output_path)
-    plt.close()
-    print(f"Boxplot saved to {output_path}")
