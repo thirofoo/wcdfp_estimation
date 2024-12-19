@@ -32,7 +32,6 @@ def calculate_response_time(taskset, target_job, log_flag=False):
     :param taskset: TaskSet containing tasks and timeline
     :param target_job: The target job whose response time is to be calculated
     :param log_flag: If True, logs detailed intermediate results
-    :param traditional_ci: If True, ignores carry-in at time 0
     :return: Calculated response time of the target job
     """
     carry_in = 0
@@ -46,13 +45,15 @@ def calculate_response_time(taskset, target_job, log_flag=False):
     while boundary < len(arrival_times) and arrival_times[boundary] * MINIMUM_TIME_UNIT < target_job.release_time:
         boundary += 1
 
-    # Calculate initial carry-in at time t = 0
+    # Calculate initial carry-in
     carry_in = 0
-    for job in timeline[arrival_times[0]]:
-        # Only consider jobs with priority higher or equal to the target job
-        if job < target_job:
-            break
-        carry_in += job.task.get_execution_time()
+    for task in taskset.tasks:
+        release_count = task.relative_deadline // task.minimum_inter_arrival_time
+        if target_job.task == task:
+            release_count = 1
+        while release_count > 0:
+            carry_in += task.get_execution_time()
+            release_count -= 1
 
     if log_flag:
         print(f"carry_in: {carry_in}")
@@ -140,7 +141,7 @@ def sample_responses(n_samples, taskset, target_job, seed):
 
 
 def calculate_response_time_distribution(taskset, target_job, false_probability=0.000001,
-                                         log_flag=False, traditional_ci=False, plot_flag=False, seed=0, thread_num=1, samples=0):
+                                         log_flag=False, plot_flag=False, seed=0, thread_num=1, samples=0):
     """
     Calculate the distribution of response times for a given target job in the taskset.
 
@@ -148,7 +149,6 @@ def calculate_response_time_distribution(taskset, target_job, false_probability=
     :param target_job: Target job for which response times are calculated
     :param false_probability: False positive rate for confidence interval
     :param log_flag: If True, logs detailed intermediate results and shows tqdm progress bar
-    :param traditional_ci: If True, uses traditional carry-in calculations
     :param plot_flag: If True, plots a histogram of response times
     :param seed: Random seed for reproducibility
     :param thread_num: Number of threads to use for parallel processing
@@ -168,7 +168,7 @@ def calculate_response_time_distribution(taskset, target_job, false_probability=
         # Single-threaded processing
         sample_range = tqdm(range(int(samples)), desc="Collecting Samples") if log_flag else range(int(samples))
         for _ in sample_range:
-            response_time = calculate_response_time(taskset, target_job, log_flag=log_flag, traditional_ci=traditional_ci)
+            response_time = calculate_response_time(taskset, target_job, log_flag=log_flag)
             response_times.append(response_time)
             if response_time >= target_job.absolute_deadline:
                 deadline_miss_cnt += 1

@@ -18,6 +18,7 @@ requires-python = ">= 3.8"
 
 [project.scripts]
 evaluate_monte_carlo = "evaluation:evaluate_monte_carlo"
+evaluate_monte_carlo_adjust_sample = "evaluation:evaluate_monte_carlo_adjust_sample"
 evaluate_berry_essen = "evaluation:evaluate_berry_essen"
 evaluate_convolution = "evaluation:evaluate_convolution"
 evaluate_convolution_doubling = "evaluation:evaluate_convolution_doubling"
@@ -25,7 +26,9 @@ evaluate_all = "evaluation:evaluate_all_methods"
 evaluate_one_taskset_all = "evaluation:plot_normalized_response_times"
 
 plot_wcdfp_comparison = "evaluation:plot_wcdfp_comparison"
+plot_time_ratio_vs_wcdfp_ratio = "evaluation:plot_time_ratio_vs_wcdfp_ratio"
 plot_execution_time = "evaluation:plot_execution_time_boxplot"
+plot_comparison_for_task_id = "evaluation:plot_comparison_for_task_id"
 
 verify_taskset = "verification.verify_taskset:verify_taskset"
 verify_monte_carlo = "verification.verify_monte_carlo:verify_monte_carlo"

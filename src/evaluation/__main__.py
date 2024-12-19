@@ -19,7 +19,7 @@ default_utilization_rate = 0.65
 default_thread_num = 16
 default_false_probability = 0.000001
 default_error_margin = 0.01
-default_float128_flag = True
+default_float128_flag = False
 
 output_prefix = "src/evaluation/output"
 
@@ -37,7 +37,7 @@ def evaluate_monte_carlo(
     samples = required_sample_size_binomial(error_margin, false_probability)
 
     # Output directory for results
-    output_dir = f"{output_prefix}/{task_num}_{utilization_rate}_{MINIMUM_TIME_UNIT}"
+    output_dir = f"{output_prefix}/{task_num}_{utilization_rate:.2f}_{MINIMUM_TIME_UNIT}"
     os.makedirs(output_dir, exist_ok=True)
 
     # CSV file path
@@ -100,27 +100,87 @@ def evaluate_monte_carlo(
 
             # Append the result directly to the CSV file
             pd.DataFrame([result]).to_csv(results_path, mode='a', index=False, header=not os.path.exists(results_path))
-
-            # Plot and save figure
-            # sorted_times_mc = np.sort(response_times_mc)
-            # monte_carlo_cdf_values = np.arange(1, len(sorted_times_mc) + 1) / len(sorted_times_mc)
-            # plt.figure(figsize=(10, 6))
-            # plt.step(sorted_times_mc, monte_carlo_cdf_values, label="Monte Carlo CDF", where="post")
-            # deadline = taskset.timeline[0][-1].absolute_deadline
-            # plt.axvline(x=deadline, color="red", linestyle="--", label="Deadline")
-            # plt.xlabel("Execution Time")
-            # plt.ylabel("Cumulative Distribution Function")
-            # plt.title(f"Monte Carlo CDF for TaskSet {i + 1}")
-            # plt.legend()
-            # plt.grid(True)
-            # plot_path = os.path.join(output_dir, f"monte_carlo_cdf_{i + 1}.png")
-            # plt.savefig(plot_path)
-            # plt.close()
-
             progress_bar.update(1)
 
     print(f"Results saved incrementally to {results_path}")
     print("\nMonte Carlo evaluation completed.")
+
+
+def evaluate_monte_carlo_adjust_sample():
+    """
+    Perform Monte Carlo evaluations with increasing sample sizes for a specific task set
+    and output the results to a CSV file.
+    """
+    task_num = 50
+    utilization_rate = 0.60
+    taskset_id = 1
+    thread_num = default_thread_num
+    log_flag = default_log_flag
+    plot_flag = default_plot_flag
+    false_probability = default_false_probability
+
+    # Initialize sample sizes as powers of 10: 1, 10, 100, ...
+    sample_sizes = [10 ** i for i in range(9)]  # Adjust the range if needed
+
+    # Output directory and CSV file
+    output_dir = f"{output_prefix}/{task_num}_{utilization_rate:.2f}_{MINIMUM_TIME_UNIT}"
+    os.makedirs(output_dir, exist_ok=True)
+    results_path = os.path.join(output_dir, "evaluation_monte_carlo_adjust_sample.csv")
+
+    # Initialize results DataFrame
+    if os.path.exists(results_path):
+        existing_results = pd.read_csv(results_path)
+    else:
+        existing_results = pd.DataFrame(
+            columns=["TaskSetID", "TaskNum", "UtilizationRate", "Samples", "WCDFP", "ExecutionTime", "DeadlineMissCount"]
+        )
+
+    # Generate the task set once
+    taskset = TaskSet(task_num=task_num, utilization_rate=utilization_rate, seed=taskset_id)  # Fixed seed for consistency
+    absolute_deadline = taskset.timeline[0][-1].absolute_deadline
+
+    # Evaluate with each sample size
+    for samples in sample_sizes:
+        if samples in existing_results["Samples"].values:
+            print(f"Samples {samples} already evaluated. Skipping.")
+            continue
+
+        print(f"Evaluating with {samples} samples...")
+
+        # Calculate Monte Carlo response time distribution
+        start_time = time.time()
+        response_times_mc, wcdfp_mc = calculate_response_time_distribution(
+            taskset=taskset,
+            target_job=taskset.target_job,
+            false_probability=false_probability,
+            thread_num=thread_num,
+            log_flag=log_flag,
+            plot_flag=plot_flag,
+            samples=samples,
+            seed=samples  # Use samples as a seed for reproducibility
+        )
+        elapsed_time = time.time() - start_time
+
+        # Calculate deadline misses
+        response_times_mc = np.array(response_times_mc)
+        deadline_miss_count = np.sum(response_times_mc > absolute_deadline)
+
+        # Save results
+        result = {
+            "TaskSetID": taskset_id,
+            "TaskNum": task_num,
+            "UtilizationRate": utilization_rate,
+            "Samples": samples,
+            "WCDFP": wcdfp_mc,
+            "ExecutionTime": elapsed_time,
+            "DeadlineMissCount": deadline_miss_count,
+        }
+
+        # Append result to DataFrame and save incrementally
+        pd.DataFrame([result]).to_csv(results_path, mode="a", index=False, header=not os.path.exists(results_path))
+        print(f"Samples {samples} evaluation completed.")
+
+    print(f"Results saved to {results_path}")
 
 
 def evaluate_berry_essen(
@@ -130,7 +190,7 @@ def evaluate_berry_essen(
     log_flag=default_log_flag,
 ):
     # Output directory for results
-    output_dir = f"{output_prefix}/{task_num}_{utilization_rate}_{MINIMUM_TIME_UNIT}"
+    output_dir = f"{output_prefix}/{task_num}_{utilization_rate:.2f}_{MINIMUM_TIME_UNIT}"
     os.makedirs(output_dir, exist_ok=True)
 
     # CSV file path
@@ -182,21 +242,6 @@ def evaluate_berry_essen(
 
             # Append the result directly to the CSV file
             pd.DataFrame([result]).to_csv(results_path, mode='a', index=False, header=not os.path.exists(results_path))
-
-            # Plot and save figure
-            # plt.figure(figsize=(10, 6))
-            # plt.plot(x_values, berry_essen_cdf_values, label="Berry-Essen CDF")
-            # absolute_deadline = taskset.timeline[0][-1].absolute_deadline
-            # plt.axvline(x=absolute_deadline, color="red", linestyle="--", label="Deadline")
-            # plt.xlabel("Response Time")
-            # plt.ylabel("Cumulative Distribution Function")
-            # plt.title(f"Berry-Essen CDF for TaskSet {taskset_id}")
-            # plt.legend()
-            # plt.grid(True)
-            # plot_path = os.path.join(output_dir, f"berry_essen_cdf_{taskset_id}.png")
-            # plt.savefig(plot_path)
-            # plt.close()
-
             progress_bar.update(1)
 
     print(f"Results saved incrementally to {results_path}")
@@ -212,11 +257,12 @@ def evaluate_convolution_doubling(
     float128_flag=default_float128_flag,
 ):
     # Output directory for results
-    output_dir = f"{output_prefix}/{task_num}_{utilization_rate}_{MINIMUM_TIME_UNIT}"
+    output_dir = f"{output_prefix}/{task_num}_{utilization_rate:.2f}_{MINIMUM_TIME_UNIT}"
     os.makedirs(output_dir, exist_ok=True)
 
     # CSV file path
-    results_path = os.path.join(output_dir, "evaluation_convolution_doubling.csv")
+    file_name = "evaluation_convolution_doubling" + ("_float128" if float128_flag else "") + ".csv"
+    results_path = os.path.join(output_dir, file_name)
 
     # Load existing results if the CSV file exists
     if os.path.exists(results_path):
@@ -264,24 +310,6 @@ def evaluate_convolution_doubling(
 
             # Append the result directly to the CSV file
             pd.DataFrame([result]).to_csv(results_path, mode='a', index=False, header=not os.path.exists(results_path))
-
-            # Calculate and Plot CDF from PDF
-            # absolute_deadline = taskset.timeline[0][-1].absolute_deadline
-            # cdf = np.cumsum(response_time)  # Cumulative sum to compute the CDF
-            # cdf /= cdf[-1]  # Normalize to ensure the CDF ranges from 0 to 1
-            # time_indices = np.arange(len(response_time)) * MINIMUM_TIME_UNIT
-            # plt.figure(figsize=(10, 6))
-            # plt.plot(time_indices, cdf, drawstyle="steps-mid", label="Convolution Doubling CDF")
-            # plt.axvline(x=absolute_deadline, color="red", linestyle="--", label="Deadline")
-            # plt.xlabel("Response Time")
-            # plt.ylabel("Cumulative Probability")
-            # plt.title(f"Convolution Doubling CDF for TaskSet {taskset_id}")
-            # plt.legend()
-            # plt.grid(True)
-            # plot_path = os.path.join(output_dir, f"convolution_doubling_cdf_{taskset_id}.png")
-            # plt.savefig(plot_path)
-            # plt.close()
-
             progress_bar.update(1)
 
     print(f"Results saved incrementally to {results_path}")
@@ -297,11 +325,12 @@ def evaluate_convolution(
     float128_flag=default_float128_flag,
 ):
     # Output directory for results
-    output_dir = f"{output_prefix}/{task_num}_{utilization_rate}_{MINIMUM_TIME_UNIT}"
+    output_dir = f"{output_prefix}/{task_num}_{utilization_rate:.2f}_{MINIMUM_TIME_UNIT}"
     os.makedirs(output_dir, exist_ok=True)
 
     # CSV file path
-    results_path = os.path.join(output_dir, "evaluation_convolution.csv")
+    file_name = "evaluation_convolution" + ("_float128" if float128_flag else "") + ".csv"
+    results_path = os.path.join(output_dir, file_name)
 
     # Load existing results if the CSV file exists
     if os.path.exists(results_path):
@@ -349,24 +378,6 @@ def evaluate_convolution(
 
             # Append the result directly to the CSV file
             pd.DataFrame([result]).to_csv(results_path, mode='a', index=False, header=not os.path.exists(results_path))
-
-            # Calculate and Plot CDF from PDF
-            # absolute_deadline = taskset.timeline[0][-1].absolute_deadline
-            # cdf = np.cumsum(response_time)  # Cumulative sum to compute the CDF
-            # cdf /= cdf[-1]  # Normalize to ensure the CDF ranges from 0 to 1
-            # time_indices = np.arange(len(response_time)) * MINIMUM_TIME_UNIT
-            # plt.figure(figsize=(10, 6))
-            # plt.plot(time_indices, cdf, drawstyle="steps-mid", label="Convolution CDF")
-            # plt.axvline(x=absolute_deadline, color="red", linestyle="--", label="Deadline")
-            # plt.xlabel("Response Time")
-            # plt.ylabel("Cumulative Probability")
-            # plt.title(f"Convolution CDF for TaskSet {taskset_id}")
-            # plt.legend()
-            # plt.grid(True)
-            # plot_path = os.path.join(output_dir, f"convolution_cdf_{taskset_id}.png")
-            # plt.savefig(plot_path)
-            # plt.close()
-
             progress_bar.update(1)
 
     print(f"Results saved incrementally to {results_path}")
@@ -392,7 +403,7 @@ def evaluate_all_methods():
 
 
 def plot_normalized_response_times(
-    task_num=10,
+    task_num=30,
     utilization_rate=0.60,
     false_probability=1e-6,
     error_margin=0.01,
@@ -403,7 +414,7 @@ def plot_normalized_response_times(
     and plot them together on one graph.
     """
     # Define task set parameters
-    taskset_seed = 47
+    taskset_seed = 16
     taskset = TaskSet(task_num=task_num, utilization_rate=utilization_rate, seed=taskset_seed)
 
     # Evaluate each method and collect normalized response time distributions
