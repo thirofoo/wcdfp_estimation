@@ -12,6 +12,7 @@ dependencies = [
     "tqdm>=4.67.1",
     "ipykernel>=6.29.5",
     "pandas>=2.2.3",
+    "pymupdf>=1.25.2",
 ]
 readme = "README.md"
 requires-python = ">= 3.8"
@@ -22,6 +23,7 @@ evaluate_monte_carlo_adjust_sample = "evaluation:evaluate_monte_carlo_adjust_sam
 evaluate_berry_essen = "evaluation:evaluate_berry_essen"
 evaluate_convolution = "evaluation:evaluate_convolution"
 evaluate_convolution_doubling = "evaluation:evaluate_convolution_doubling"
+evaluate_convolution_merge = "evaluation:evaluate_convolution_merge"
 evaluate_all = "evaluation:evaluate_all_methods"
 evaluate_one_taskset_all = "evaluation:plot_normalized_response_times"
 
@@ -32,8 +34,10 @@ plot_comparison_for_task_id = "evaluation:plot_comparison_for_task_id"
 
 verify_taskset = "verification.verify_taskset:verify_taskset"
 verify_monte_carlo = "verification.verify_monte_carlo:verify_monte_carlo"
-verify_convolution = "verification.verify_convolution:verify_convolution"
+verify_convolution = "verification.verify_circular_convolution:verify_convolution"
 verify_berry_essen = "verification.verify_berry_essen:verify_berry_essen"
+
+merge_pdf = "evaluation:merge_two_pdfs_side_by_side"
 
 [build-system]
 requires = ["hatchling"]

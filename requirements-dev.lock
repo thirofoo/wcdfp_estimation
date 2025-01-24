@@ -75,6 +75,8 @@ pure-eval==0.2.3
     # via stack-data
 pygments==2.18.0
     # via ipython
+pymupdf==1.25.2
+    # via evaluation
 pyparsing==3.2.0
     # via matplotlib
 python-dateutil==2.9.0.post0

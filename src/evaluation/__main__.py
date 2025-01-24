@@ -6,7 +6,11 @@ from tqdm import tqdm
 import matplotlib.pyplot as plt
 from methods.monte_carlo.estimation import calculate_response_time_distribution, required_sample_size_binomial
 from methods.berry_essen.estimation import calculate_response_time_by_berry_essen
-from methods.circular_convolution.estimation import calculate_response_time_with_doubling, calculate_response_time_by_conv
+from methods.circular_convolution.estimation import (
+    calculate_response_time_by_conv,
+    calculate_response_time_with_doubling,
+    calculate_response_time_with_merge,
+)
 from common.taskset import TaskSet
 from common.parameters import MINIMUM_TIME_UNIT, BERRY_ESSEN_COEFFICIENT as A
 
@@ -34,7 +38,8 @@ def evaluate_monte_carlo(
     plot_flag=default_plot_flag,
 ):
     # Calculate required sample size
-    samples = required_sample_size_binomial(error_margin, false_probability)
+    # samples = required_sample_size_binomial(error_margin, false_probability)
+    samples = 50000
 
     # Output directory for results
     output_dir = f"{output_prefix}/{task_num}_{utilization_rate:.2f}_{MINIMUM_TIME_UNIT}"
@@ -384,6 +389,75 @@ def evaluate_convolution(
     print("\nConvolution evaluation completed.")
 
 
+def evaluate_convolution_merge(
+    task_num=default_task_num,
+    utilization_rate=default_utilization_rate,
+    total_taskset=default_total_taskset,
+    thread_num=default_thread_num,
+    log_flag=default_log_flag,
+    float128_flag=default_float128_flag,
+):
+    # Output directory for results
+    output_dir = f"{output_prefix}/{task_num}_{utilization_rate:.2f}_{MINIMUM_TIME_UNIT}"
+    os.makedirs(output_dir, exist_ok=True)
+
+    # CSV file path
+    file_name = "evaluation_convolution_merge" + ("_float128" if float128_flag else "") + ".csv"
+    results_path = os.path.join(output_dir, file_name)
+
+    # Load existing results if the CSV file exists
+    if os.path.exists(results_path):
+        existing_results = pd.read_csv(results_path)
+    else:
+        existing_results = pd.DataFrame(columns=["TaskSetID", "TaskNum", "UtilizationRate", "WCDFP", "ExecutionTime", "DeadlineMissCount"])
+
+    # Identify evaluated TaskSetIDs
+    evaluated_taskset_ids = set(existing_results["TaskSetID"].values)
+
+    with tqdm(total=total_taskset, desc="Evaluating TaskSets", unit="set") as progress_bar:
+        for i in range(total_taskset):
+            taskset_id = i + 1
+
+            # Skip already evaluated TaskSets
+            if taskset_id in evaluated_taskset_ids:
+                progress_bar.update(1)
+                continue
+
+            # Update the seed to ensure non-overlapping seeds for threads in parallel processing
+            seed = i * thread_num
+            progress_bar.set_description(f"Evaluating TaskSet {taskset_id}/{total_taskset}")
+
+            # Generate TaskSet
+            taskset = TaskSet(task_num=task_num, utilization_rate=utilization_rate, seed=taskset_id)
+
+            # Calculate response time using merge technique
+            start_time = time.time()
+            response_time, wcdfp_merge = calculate_response_time_with_merge(
+                taskset=taskset,
+                target_job=taskset.target_job,
+                log_flag=log_flag,
+                float128_flag=float128_flag,
+            )
+            elapsed_time = time.time() - start_time
+
+            # Save results for the current TaskSet
+            result = {
+                "TaskSetID": taskset_id,
+                "TaskNum": task_num,
+                "UtilizationRate": utilization_rate,
+                "WCDFP": wcdfp_merge,
+                "ExecutionTime": elapsed_time,
+            }
+
+            # Append the result directly to the CSV file
+            pd.DataFrame([result]).to_csv(results_path, mode='a', index=False, header=not os.path.exists(results_path))
+            progress_bar.update(1)
+
+    print(f"Results saved incrementally to {results_path}")
+    print("\nConvolution Merge evaluation completed.")
+
+
+
 def evaluate_all_methods():
     """
     Evaluate all methods for all combinations of task_num and utilization_rate.
@@ -397,9 +471,10 @@ def evaluate_all_methods():
 
             # Pass the current parameters to each evaluation function
             evaluate_monte_carlo(task_num=t_num, utilization_rate=u_rate)
-            evaluate_berry_essen(task_num=t_num, utilization_rate=u_rate)
-            evaluate_convolution_doubling(task_num=t_num, utilization_rate=u_rate)
-            evaluate_convolution(task_num=t_num, utilization_rate=u_rate)
+            # evaluate_berry_essen(task_num=t_num, utilization_rate=u_rate)
+            # evaluate_convolution_doubling(task_num=t_num, utilization_rate=u_rate)
+            # evaluate_convolution_merge(task_num=t_num, utilization_rate=u_rate)
+            # evaluate_convolution(task_num=t_num, utilization_rate=u_rate)
 
 
 def plot_normalized_response_times(

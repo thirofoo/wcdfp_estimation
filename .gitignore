@@ -40,6 +40,6 @@ Thumbs.db
 *.swp
 
 memo.md
-**/output/*
+**/output**/**
 
 notebooks

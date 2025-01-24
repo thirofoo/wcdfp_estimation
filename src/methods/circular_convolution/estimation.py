@@ -2,6 +2,7 @@ import numpy as np
 from scipy.signal import fftconvolve
 from tqdm import tqdm
 from common.parameters import MINIMUM_TIME_UNIT
+import heapq
 
 
 def convolve_and_truncate(pdf1, pdf2, size):
@@ -125,3 +126,58 @@ def calculate_response_time_with_doubling(taskset, target_job, log_flag=False, f
         print(f"Sum of response_time: {np.sum(response_time)}")
 
     return response_time, wcdfp
+
+
+def calculate_response_time_with_merge(taskset, target_job, log_flag=False, float128_flag=False):
+    """
+    Calculate response time distribution using a merge technique and priority queue.
+
+    :param taskset: TaskSet containing tasks
+    :param target_job: Target job for which response time distribution is calculated
+    :param log_flag: If True, logs detailed intermediate results
+    :param float128_flag: If True, use float128 precision; otherwise, use float64 precision
+    :return: Response time distribution and WCDFP
+    """
+    dtype = np.float128 if float128_flag else np.float64
+
+    size = int(target_job.absolute_deadline / MINIMUM_TIME_UNIT) + 1
+    response_time = []
+    wcdfp = dtype(0.0)
+
+    # Priority queue for distributions
+    pq = []
+
+    for task in tqdm(taskset.tasks, desc="Processing tasks", disable=not log_flag):
+        release_count = int(np.ceil((target_job.task.relative_deadline + task.relative_deadline) / task.minimum_inter_arrival_time))
+        if target_job.task == task:
+            release_count = 1
+
+        current_pdf = task.original_pdf_values.astype(dtype)
+        current_pdf /= np.sum(current_pdf)
+        
+        while release_count > 0:
+            if release_count % 2 == 1:
+                index = len(response_time)
+                response_time.append(current_pdf)
+                heapq.heappush(pq, (len(current_pdf), index))
+            current_pdf, exceed_prob_doubling = convolve_and_truncate(current_pdf, current_pdf, size)
+            current_pdf = np.concatenate((current_pdf, [exceed_prob_doubling])).astype(dtype)
+            current_pdf /= np.sum(current_pdf)
+            release_count //= 2
+
+    # Merge process using priority queue
+    while len(pq) > 1:
+        size1, idx1 = heapq.heappop(pq)
+        size2, idx2 = heapq.heappop(pq)
+        merged_pdf, exceed_prob = convolve_and_truncate(response_time[idx1], response_time[idx2], size)
+        response_time[idx1] = merged_pdf
+        wcdfp += exceed_prob
+        heapq.heappush(pq, (len(merged_pdf), idx1))
+
+    if log_flag:
+        print(f"Final WCDFP: {wcdfp}")
+        print(f"Sum of response_time: {np.sum(response_time[pq[0][1]])}")
+
+    # Return the last distribution in the queue
+    return response_time[pq[0][1]], wcdfp
+
