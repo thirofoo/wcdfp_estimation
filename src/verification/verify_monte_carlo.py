@@ -1,5 +1,5 @@
 from common.taskset import TaskSet
-from methods.monte_carlo.estimation import calculate_response_time
+from methods.monte_carlo.estimation import calculate_response_time_by_monte_carlo
 
 def verify_monte_carlo():
     """
@@ -17,5 +17,5 @@ def verify_monte_carlo():
     print(f"lowest priority execution_time : {target_job.task.get_execution_time()}\n")
 
     # Calculate response time
-    response_time = calculate_response_time(taskset, target_job, log_flag=True)
+    response_time = calculate_response_time_by_monte_carlo(taskset, target_job, log_flag=True)
     print(f"Calculated Response Time: {response_time}")

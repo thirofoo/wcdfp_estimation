@@ -5,14 +5,14 @@ import pandas as pd
 from tqdm import tqdm
 import matplotlib.pyplot as plt
 from methods.monte_carlo.estimation import (
-    calculate_response_time_distribution,
+    calculate_wcdfp_by_monte_carlo,
     required_sample_size_binomial,
 )
-from methods.berry_essen.estimation import calculate_response_time_by_berry_essen
+from methods.berry_essen.estimation import calculate_wcdfp_by_berry_essen
 from methods.circular_convolution.estimation import (
-    calculate_response_time_by_conv,
-    calculate_response_time_with_doubling,
-    calculate_response_time_with_merge,
+    calculate_wcdfp_by_sequential_convolution,
+    calculate_wcdfp_by_aggregate_convolution_original,
+    calculate_wcdfp_by_aggregate_convolution_improvement,
 )
 from common.taskset import TaskSet
 from common.parameters import MINIMUM_TIME_UNIT, BERRY_ESSEN_COEFFICIENT as A
@@ -81,7 +81,7 @@ def evaluate_monte_carlo(
             taskset = TaskSet(task_num=task_num, utilization_rate=utilization_rate, seed=taskset_id)
             seed = i * thread_num
             start_time = time.time()
-            response_times_mc, wcdfp_mc = calculate_response_time_distribution(
+            response_times_mc, wcdfp_mc = calculate_wcdfp_by_monte_carlo(
                 taskset=taskset,
                 target_job=taskset.target_job,
                 false_probability=false_probability,
@@ -134,7 +134,7 @@ def evaluate_monte_carlo_adjust_sample():
 
         print(f"Evaluating with {samples} samples...")
         start_time = time.time()
-        response_times_mc, wcdfp_mc = calculate_response_time_distribution(
+        response_times_mc, wcdfp_mc = calculate_wcdfp_by_monte_carlo(
             taskset=taskset,
             target_job=taskset.target_job,
             false_probability=false_probability,
@@ -182,7 +182,7 @@ def evaluate_berry_essen(
             progress_bar.set_description(f"Evaluating TaskSet {taskset_id}/{total_taskset}")
             taskset = TaskSet(task_num=task_num, utilization_rate=utilization_rate, seed=taskset_id)
             start_time = time.time()
-            wcdfp_be, _ = calculate_response_time_by_berry_essen(
+            wcdfp_be, _ = calculate_wcdfp_by_berry_essen(
                 taskset=taskset,
                 target_job=taskset.target_job,
                 A=A,
@@ -252,7 +252,7 @@ def evaluate_convolution_generic(evaluation_fn, file_label, task_num, utilizatio
 
 
 def eval_conv_doubling(taskset, seed, log_flag, float128_flag):
-    _, wcdfp = calculate_response_time_with_doubling(
+    _, wcdfp = calculate_wcdfp_by_aggregate_convolution_original(
         taskset=taskset,
         target_job=taskset.target_job,
         log_flag=log_flag,
@@ -263,7 +263,7 @@ def eval_conv_doubling(taskset, seed, log_flag, float128_flag):
 
 
 def eval_conv(taskset, seed, log_flag, float128_flag):
-    _, wcdfp = calculate_response_time_by_conv(
+    _, wcdfp = calculate_wcdfp_by_sequential_convolution(
         taskset=taskset,
         target_job=taskset.target_job,
         log_flag=log_flag,
@@ -273,7 +273,7 @@ def eval_conv(taskset, seed, log_flag, float128_flag):
 
 
 def eval_conv_merge(taskset, seed, log_flag, float128_flag):
-    _, wcdfp = calculate_response_time_with_merge(
+    _, wcdfp = calculate_wcdfp_by_aggregate_convolution_improvement(
         taskset=taskset,
         target_job=taskset.target_job,
         log_flag=log_flag,
@@ -331,7 +331,7 @@ def plot_normalized_response_times(
     # Monte Carlo
     start_time = time.time()
     samples = required_sample_size_binomial(error_margin, false_probability)
-    response_times_mc, wcdfp_mc = calculate_response_time_distribution(
+    response_times_mc, wcdfp_mc = calculate_wcdfp_by_monte_carlo(
         taskset=taskset,
         target_job=taskset.target_job,
         false_probability=false_probability,
@@ -348,7 +348,7 @@ def plot_normalized_response_times(
 
     # Convolution
     start_time = time.time()
-    response_time_conv, wcdfp_conv = calculate_response_time_by_conv(
+    response_time_conv, wcdfp_conv = calculate_wcdfp_by_sequential_convolution(
         taskset,
         taskset.target_job,
         float128_flag=float128_flag
@@ -362,7 +362,7 @@ def plot_normalized_response_times(
 
     # Doubling Convolution
     start_time = time.time()
-    response_time_doubling, wcdfp_doubling = calculate_response_time_with_doubling(
+    response_time_doubling, wcdfp_doubling = calculate_wcdfp_by_aggregate_convolution_original(
         taskset,
         taskset.target_job,
         float128_flag=float128_flag
@@ -376,7 +376,7 @@ def plot_normalized_response_times(
 
     # Berry-Essen
     start_time = time.time()
-    wcdfp_be, (x_values, berry_essen_cdf_values) = calculate_response_time_by_berry_essen(
+    wcdfp_be, (x_values, berry_essen_cdf_values) = calculate_wcdfp_by_berry_essen(
         taskset=taskset,
         target_job=taskset.target_job,
         A=A,
