@@ -8,17 +8,17 @@ from matplotlib.colors import LinearSegmentedColormap
 import fitz
 
 # Global configuration
-OUTPUT_PREFIX = "src/evaluation/output_0209"
-PREFIX_TEMPLATE = os.path.join("src", "evaluation", "output_0209", "{task_count}_{util_rate:.2f}_{epsilon}")
+OUTPUT_PREFIX = "src/evaluation/output"
+PREFIX_TEMPLATE = os.path.join("src", "evaluation", "output", "{task_count}_{util_rate:.2f}_{epsilon}")
 
 METHOD_NAMES = [
     "berry_essen",
-    "convolution_merge",
-    "convolution",
+    "aggregate_conv_imp",
+    "sequential_conv",
     "monte_carlo",
-    # "convolution_doubling",
-    # "convolution_doubling_float128",
-    # "convolution_float128"
+    # "aggregate_conv_orig",
+    # "aggregate_conv_orig_float128",
+    # "sequential_conv_float128"
 ]
 
 METHOD_TO_LABEL = {
@@ -26,12 +26,12 @@ METHOD_TO_LABEL = {
     "berry_essen": "BE",
     "monte_carlo_multi": "MC (24 thread)",
     "monte_carlo_single": "MC (1 thread)",
-    "convolution": "SC",
-    "convolution_merge": "AC",
-    # "convolution_doubling": "AC \ (Orig.)",
-    # "convolution_merge": "AC \ (Imp.)",
-    # "convolution_doubling_float128": "RC (float128)",
-    # "convolution_float128": "SC (float128)"
+    "sequential_conv": "SC",
+    "aggregate_conv_imp": "AC",
+    # "aggregate_conv_orig": "AC \ (Orig.)",
+    # "aggregate_conv_imp": "AC \ (Imp.)",
+    # "aggregate_conv_orig_float128": "RC (float128)",
+    # "sequential_conv_float128": "SC (float128)"
 }
 
 # Constant parameter values for most plots
@@ -350,10 +350,10 @@ def plot_comparison_for_task_id(task_id=35, task_count=50, util_rate=0.60):
         "monte_carlo_multi": "tab:blue",
         "monte_carlo_single": "tab:purple",
         "berry_essen": "tab:orange",
-        "convolution": "tab:green",
-        "convolution_merge": "tab:red"
+        "sequential_conv": "tab:green",
+        "aggregate_conv_imp": "tab:red"
     }
-    methods = ["monte_carlo_multi", "monte_carlo_single", "berry_essen", "convolution", "convolution_merge"]
+    methods = ["monte_carlo_multi", "monte_carlo_single", "berry_essen", "sequential_conv", "aggregate_conv_imp"]
     plt.figure(figsize=(12, 7))
     for method in methods:
         suffix = f"_{task_id}" if "monte_carlo" in method else ""
@@ -388,34 +388,3 @@ def plot_comparison_for_task_id(task_id=35, task_count=50, util_rate=0.60):
     plt.savefig(output, dpi=300, format="pdf", bbox_inches='tight')
     plt.close()
     print(f"Plot saved to {output}")
-
-
-def merge_two_pdfs_side_by_side():
-    """
-    Merge two single-page PDFs side by side into one PDF page.
-    """
-    pdf1_path = "src/evaluation/output_0117/merged_plot.pdf"
-    pdf2_path = "src/evaluation/output_0117/execution_time_boxplot_aggregated.pdf"
-    output_pdf_path = "src/evaluation/output_0117/merged_side_by_side.pdf"
-
-    doc1 = fitz.open(pdf1_path)
-    doc2 = fitz.open(pdf2_path)
-    page1 = doc1[0]
-    page2 = doc2[0]
-    rect1, rect2 = page1.rect, page2.rect
-    scale2 = rect1.height / rect2.height
-    scaled_width2 = rect2.width * scale2
-    scaled_height2 = rect2.height * scale2
-
-    merged_doc = fitz.open()
-    merged_page = merged_doc.new_page(width=rect1.width + scaled_width2, height=rect1.height)
-    merged_page.show_pdf_page(fitz.Rect(0, 0, rect1.width, rect1.height), doc1, 0, keep_proportion=False)
-    merged_page.show_pdf_page(
-        fitz.Rect(rect1.width + 20, 0, rect1.width + scaled_width2, scaled_height2),
-        doc2, 0, keep_proportion=False)
-
-    merged_doc.save(output_pdf_path)
-    merged_doc.close()
-    doc1.close()
-    doc2.close()
-    print(f"Merged PDF saved to: {output_pdf_path}")

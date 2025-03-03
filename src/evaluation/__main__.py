@@ -10,9 +10,9 @@ from methods.monte_carlo.estimation import (
 )
 from methods.berry_essen.estimation import calculate_wcdfp_by_berry_essen
 from methods.circular_convolution.estimation import (
-    calculate_wcdfp_by_sequential_convolution,
-    calculate_wcdfp_by_aggregate_convolution_original,
-    calculate_wcdfp_by_aggregate_convolution_improvement,
+    calculate_wcdfp_by_sequential_conv,
+    calculate_wcdfp_by_aggregate_conv_orig,
+    calculate_wcdfp_by_aggregate_conv_imp,
 )
 from common.taskset import TaskSet
 from common.parameters import MINIMUM_TIME_UNIT, BERRY_ESSEN_COEFFICIENT as A
@@ -210,9 +210,7 @@ def evaluate_convolution_generic(evaluation_fn, file_label, task_num, utilizatio
     file_name = f"evaluation_{file_label}" + ("_float128.csv" if float128_flag else ".csv")
     results_path = os.path.join(output_dir, file_name)
     columns = ["TaskSetID", "TaskNum", "UtilizationRate", "WCDFP", "ExecutionTime"]
-    # Some methods include DeadlineMissCount; add if needed.
-    if file_label in ("monte_carlo", "convolution_merge", "evaluation_convolution_doubling"):
-        columns.append("DeadlineMissCount")
+    
     existing_results = load_existing_results(results_path, columns)
     evaluated_ids = set(existing_results["TaskSetID"].values)
 
@@ -251,8 +249,8 @@ def evaluate_convolution_generic(evaluation_fn, file_label, task_num, utilizatio
     print(f"{file_label.capitalize()} results saved to {results_path}")
 
 
-def eval_conv_doubling(taskset, seed, log_flag, float128_flag):
-    _, wcdfp = calculate_wcdfp_by_aggregate_convolution_original(
+def eval_aggregate_conv_orig(taskset, seed, log_flag, float128_flag):
+    _, wcdfp = calculate_wcdfp_by_aggregate_conv_orig(
         taskset=taskset,
         target_job=taskset.target_job,
         log_flag=log_flag,
@@ -262,8 +260,8 @@ def eval_conv_doubling(taskset, seed, log_flag, float128_flag):
     return wcdfp
 
 
-def eval_conv(taskset, seed, log_flag, float128_flag):
-    _, wcdfp = calculate_wcdfp_by_sequential_convolution(
+def eval_sequential_conv(taskset, seed, log_flag, float128_flag):
+    _, wcdfp = calculate_wcdfp_by_sequential_conv(
         taskset=taskset,
         target_job=taskset.target_job,
         log_flag=log_flag,
@@ -272,8 +270,8 @@ def eval_conv(taskset, seed, log_flag, float128_flag):
     return wcdfp
 
 
-def eval_conv_merge(taskset, seed, log_flag, float128_flag):
-    _, wcdfp = calculate_wcdfp_by_aggregate_convolution_improvement(
+def eval_aggregate_conv_imp(taskset, seed, log_flag, float128_flag):
+    _, wcdfp = calculate_wcdfp_by_aggregate_conv_imp(
         taskset=taskset,
         target_job=taskset.target_job,
         log_flag=log_flag,
@@ -282,25 +280,25 @@ def eval_conv_merge(taskset, seed, log_flag, float128_flag):
     return wcdfp
 
 
-def evaluate_convolution_doubling(task_num=default_task_num, utilization_rate=default_utilization_rate,
+def evaluate_aggregate_conv_orig(task_num=default_task_num, utilization_rate=default_utilization_rate,
                                   total_taskset=default_total_taskset, thread_num=default_thread_num,
                                   log_flag=default_log_flag, float128_flag=default_float128_flag):
     # Use the generic evaluator helper
-    evaluate_convolution_generic(eval_conv_doubling, "convolution_doubling", task_num, utilization_rate,
+    evaluate_convolution_generic(eval_aggregate_conv_orig, "aggregate_conv_orig", task_num, utilization_rate,
                                  total_taskset, thread_num, log_flag, float128_flag)
 
 
-def evaluate_convolution(task_num=default_task_num, utilization_rate=default_utilization_rate,
+def evaluate_sequential_conv(task_num=default_task_num, utilization_rate=default_utilization_rate,
                          total_taskset=default_total_taskset, thread_num=default_thread_num,
                          log_flag=default_log_flag, float128_flag=default_float128_flag):
-    evaluate_convolution_generic(eval_conv, "convolution", task_num, utilization_rate,
+    evaluate_convolution_generic(eval_sequential_conv, "sequential_conv", task_num, utilization_rate,
                                  total_taskset, thread_num, log_flag, float128_flag)
 
 
-def evaluate_convolution_merge(task_num=default_task_num, utilization_rate=default_utilization_rate,
+def evaluate_aggregate_conv_imp(task_num=default_task_num, utilization_rate=default_utilization_rate,
                                total_taskset=default_total_taskset, thread_num=default_thread_num,
                                log_flag=default_log_flag, float128_flag=default_float128_flag):
-    evaluate_convolution_generic(eval_conv_merge, "convolution_merge", task_num, utilization_rate,
+    evaluate_convolution_generic(eval_aggregate_conv_imp, "aggregate_conv_imp", task_num, utilization_rate,
                                  total_taskset, thread_num, log_flag, float128_flag)
 
 
@@ -312,9 +310,9 @@ def evaluate_all_methods():
             print(f"Evaluating for TaskNum: {t_num}, UtilizationRate: {u_rate}")
             evaluate_monte_carlo(task_num=t_num, utilization_rate=u_rate)
             evaluate_berry_essen(task_num=t_num, utilization_rate=u_rate)
-            evaluate_convolution_doubling(task_num=t_num, utilization_rate=u_rate)
-            evaluate_convolution_merge(task_num=t_num, utilization_rate=u_rate)
-            evaluate_convolution(task_num=t_num, utilization_rate=u_rate)
+            evaluate_aggregate_conv_orig(task_num=t_num, utilization_rate=u_rate)
+            evaluate_aggregate_conv_imp(task_num=t_num, utilization_rate=u_rate)
+            evaluate_sequential_conv(task_num=t_num, utilization_rate=u_rate)
 
 
 def plot_normalized_response_times(
@@ -346,33 +344,33 @@ def plot_normalized_response_times(
     methods_data.append(("Monte Carlo", response_times_mc, cdf_mc))
     print(f"Monte Carlo evaluation completed in {time.time() - start_time:.2f} seconds.")
 
-    # Convolution
+    # Sequential Convolution
     start_time = time.time()
-    response_time_conv, wcdfp_conv = calculate_wcdfp_by_sequential_convolution(
+    response_time_sequential, wcdfp_sequential = calculate_wcdfp_by_sequential_conv(
         taskset,
         taskset.target_job,
         float128_flag=float128_flag
     )
-    response_time_conv = np.concatenate([response_time_conv, [wcdfp_conv]])
-    response_time_conv = np.asarray(response_time_conv)
-    cdf_conv = np.cumsum(response_time_conv) / np.sum(response_time_conv)
-    indices_conv = np.arange(len(response_time_conv)) * MINIMUM_TIME_UNIT
-    methods_data.append(("Convolution", indices_conv, cdf_conv))
+    response_time_sequential = np.concatenate([response_time_sequential, [wcdfp_sequential]])
+    response_time_sequential = np.asarray(response_time_sequential)
+    cdf_sequential = np.cumsum(response_time_sequential) / np.sum(response_time_sequential)
+    indices_sequential = np.arange(len(response_time_sequential)) * MINIMUM_TIME_UNIT
+    methods_data.append(("Convolution", indices_sequential, cdf_sequential))
     print(f"Convolution evaluation completed in {time.time() - start_time:.2f} seconds.")
 
-    # Doubling Convolution
+    # Aggregate Convolution Original
     start_time = time.time()
-    response_time_doubling, wcdfp_doubling = calculate_wcdfp_by_aggregate_convolution_original(
+    response_time_aggregate_original, wcdfp_aggregate_original = calculate_wcdfp_by_aggregate_conv_orig(
         taskset,
         taskset.target_job,
         float128_flag=float128_flag
     )
-    response_time_doubling = np.concatenate([response_time_doubling, [wcdfp_doubling]])
-    response_time_doubling = np.asarray(response_time_doubling)
-    cdf_doubling = np.cumsum(response_time_doubling) / np.sum(response_time_doubling)
-    indices_doubling = np.arange(len(response_time_doubling)) * MINIMUM_TIME_UNIT
-    methods_data.append(("Doubling", indices_doubling, cdf_doubling))
-    print(f"Doubling Convolution evaluation completed in {time.time() - start_time:.2f} seconds.")
+    response_time_aggregate_original = np.concatenate([response_time_aggregate_original, [wcdfp_aggregate_original]])
+    response_time_aggregate_original = np.asarray(response_time_aggregate_original)
+    cdf_aggregate_original = np.cumsum(response_time_aggregate_original) / np.sum(response_time_aggregate_original)
+    indices_aggregate_original = np.arange(len(response_time_aggregate_original)) * MINIMUM_TIME_UNIT
+    methods_data.append(("Aggregate", indices_aggregate_original, cdf_aggregate_original))
+    print(f"Aggregate Convolution evaluation completed in {time.time() - start_time:.2f} seconds.")
 
     # Berry-Essen
     start_time = time.time()

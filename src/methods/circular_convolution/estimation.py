@@ -24,7 +24,7 @@ def convolve(pdf1: np.ndarray, pdf2: np.ndarray) -> np.ndarray:
     conv_pdf = fftconvolve(pdf1, pdf2, mode='full')
     return np.maximum(conv_pdf, 0.0)
 
-def calculate_wcdfp_by_sequential_convolution(taskset, target_job, log_flag: bool = False, float128_flag: bool = False) -> Tuple[np.ndarray, np.float64]:
+def calculate_wcdfp_by_sequential_conv(taskset, target_job, log_flag: bool = False, float128_flag: bool = False) -> Tuple[np.ndarray, np.float64]:
     """
     Calculate response time distribution via convolution with truncation.
     """
@@ -76,9 +76,9 @@ def calculate_wcdfp_by_sequential_convolution(taskset, target_job, log_flag: boo
 
     return response_time, wcdfp
 
-def calculate_wcdfp_by_aggregate_convolution_original(taskset, target_job, log_flag: bool = False, float128_flag: bool = False) -> Tuple[np.ndarray, np.float64]:
+def calculate_wcdfp_by_aggregate_conv_orig(taskset, target_job, log_flag: bool = False, float128_flag: bool = False) -> Tuple[np.ndarray, np.float64]:
     """
-    Calculate the response time distribution using the doubling technique.
+    Calculate the response time distribution using the exponentiation by squaring technique.
     """
     dtype = np.float128 if float128_flag else np.float64
     size = int(target_job.absolute_deadline / MINIMUM_TIME_UNIT) + 1
@@ -111,9 +111,9 @@ def calculate_wcdfp_by_aggregate_convolution_original(taskset, target_job, log_f
 
     return response_time, wcdfp
 
-def calculate_wcdfp_by_aggregate_convolution_improvement(taskset, target_job, log_flag: bool = False, float128_flag: bool = False) -> Tuple[np.ndarray, np.float64]:
+def calculate_wcdfp_by_aggregate_conv_imp(taskset, target_job, log_flag: bool = False, float128_flag: bool = False) -> Tuple[np.ndarray, np.float64]:
     """
-    Calculate the response time distribution using a merge approach with a priority queue.
+    Calculate the response time distribution using exponentiation by squaring with a priority queue.
     """
     dtype = np.float128 if float128_flag else np.float64
     size = int(target_job.absolute_deadline / MINIMUM_TIME_UNIT) + 1

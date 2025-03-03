@@ -20,9 +20,9 @@ requires-python = ">= 3.8"
 [project.scripts]
 evaluate_monte_carlo = "evaluation:evaluate_monte_carlo"
 evaluate_berry_essen = "evaluation:evaluate_berry_essen"
-evaluate_convolution = "evaluation:evaluate_convolution"
-evaluate_convolution_doubling = "evaluation:evaluate_convolution_doubling"
-evaluate_convolution_merge = "evaluation:evaluate_convolution_merge"
+evaluate_sequential_conv = "evaluation:evaluate_sequential_conv"
+evaluate_aggregate_conv_orig = "evaluation:evaluate_aggregate_conv_orig"
+evaluate_aggregate_conv_imp = "evaluation:evaluate_aggregate_conv_imp"
 evaluate_monte_carlo_adjust_sample = "evaluation:evaluate_monte_carlo_adjust_sample"
 evaluate_one_taskset_all = "evaluation:plot_normalized_response_times"
 evaluate_all = "evaluation:evaluate_all_methods"
@@ -36,8 +36,6 @@ verify_taskset = "verification.verify_taskset:verify_taskset"
 verify_monte_carlo = "verification.verify_monte_carlo:verify_monte_carlo"
 verify_convolution = "verification.verify_circular_convolution:verify_convolution"
 verify_berry_essen = "verification.verify_berry_essen:verify_berry_essen"
-
-merge_pdf = "evaluation:merge_two_pdfs_side_by_side"
 
 [build-system]
 requires = ["hatchling"]

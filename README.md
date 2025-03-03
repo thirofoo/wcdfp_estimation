@@ -50,8 +50,8 @@ The project uses `rye` for script execution. Below are the categorized commands 
 rye run evaluate_monte_carlo                   # Run Monte Carlo evaluation.
 rye run evaluate_monte_carlo_adjust_sample     # Adjust sample size in Monte Carlo evaluation.
 rye run evaluate_berry_essen                   # Evaluate using the Berry-Esseen theorem.
-rye run evaluate_convolution                   # Evaluate using Circular Convolution.
-rye run evaluate_convolution_doubling          # Evaluate using Circular Convolution with Doubling.
+rye run evaluate_sequential_conv               # Evaluate using Circular Convolution.
+rye run evaluate_aggregate_conv_orig           # Evaluate using Circular Convolution with folding order optimization.
 rye run evaluate_all                           # Run evaluations for all methods.
 rye run evaluate_one_taskset_all               # Plot normalized response times for one taskset across all methods.
 

@@ -100,7 +100,7 @@ def sample_responses(n_samples, taskset, target_job, seed):
     sub_response_times = []
     sub_deadline_miss_cnt = 0
 
-    for _ in range(n_samples):
+    for _ in range(int(n_samples)):
         response_time = calculate_response_time_by_monte_carlo(taskset, target_job)
         sub_response_times.append(response_time)
         if response_time >= target_job.absolute_deadline:

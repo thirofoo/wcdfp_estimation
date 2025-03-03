@@ -4,9 +4,9 @@ import matplotlib.pyplot as plt
 from common.parameters import MINIMUM_TIME_UNIT
 from common.taskset import TaskSet
 from methods.circular_convolution.estimation import (
-    calculate_wcdfp_by_sequential_convolution,
-    calculate_wcdfp_by_aggregate_convolution_original,
-    calculate_wcdfp_by_aggregate_convolution_improvement
+    calculate_wcdfp_by_sequential_conv,
+    calculate_wcdfp_by_aggregate_conv_orig,
+    calculate_wcdfp_by_aggregate_conv_imp
 )
 
 def calculate_cdf(response_time):
@@ -16,9 +16,9 @@ def calculate_cdf(response_time):
 def run_convolution_methods(taskset, target_job):
     # List of methods to calculate response time with their labels and options
     methods = [
-        {"label": "Convolution", "func": calculate_wcdfp_by_sequential_convolution, "kwargs": {"log_flag": True}},
-        {"label": "Doubling",  "func": calculate_wcdfp_by_aggregate_convolution_original, "kwargs": {}},
-        {"label": "Merge",     "func": calculate_wcdfp_by_aggregate_convolution_improvement, "kwargs": {}}
+        {"label": "Sequential", "func": calculate_wcdfp_by_sequential_conv, "kwargs": {"log_flag": True}},
+        {"label": "Aggregate (Orig)", "func": calculate_wcdfp_by_aggregate_conv_orig, "kwargs": {}},
+        {"label": "Aggregate (Imp)", "func": calculate_wcdfp_by_aggregate_conv_imp, "kwargs": {}}
     ]
 
     results = {}
@@ -44,9 +44,9 @@ def plot_response_time_cdfs(cdfs, deadline, output_dir):
 
     plt.figure(figsize=(10, 6))
     styles = {
-        "Convolution": {"color": "blue",   "linestyle": "--", "label": "Convolution CDF"},
-        "Doubling":    {"color": "orange", "linestyle": "-",  "label": "Doubling CDF"},
-        "Merge":       {"color": "green",  "linestyle": "-.", "label": "Merge CDF"}
+        "Sequential": {"color": "blue",   "linestyle": "--", "label": "Sequential CDF"},
+        "Aggregate (Orig)": {"color": "orange", "linestyle": "-",  "label": "Aggregate (Orig) CDF"},
+        "Aggregate (Imp)": {"color": "green",  "linestyle": "-.", "label": "Aggregate (Imp) CDF"}
     }
     for label, style in styles.items():
         plt.plot(
@@ -61,7 +61,7 @@ def plot_response_time_cdfs(cdfs, deadline, output_dir):
 
     plt.xlabel("Response Time")
     plt.ylabel("Cumulative Distribution Function")
-    plt.title("Response Time CDFs (Convolution vs Doubling vs Merge)")
+    plt.title("Response Time CDFs (Convolution vs Aggregate (Orig) vs Aggregate (Imp))")
     plt.legend()
     plt.grid(True, which="both", linestyle="--", linewidth=0.5)
 
