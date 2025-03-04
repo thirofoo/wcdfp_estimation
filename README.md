@@ -15,7 +15,7 @@ project-root/
 │   ├── evaluation/
 │   │   ├── __init__.py
 │   │   ├── __main__.py
-│   │   └── analize.py
+│   │   └── analyze.py
 │   ├── methods/
 │   │   ├── monte_carlo/
 │   │   │   ├── __init__.py
