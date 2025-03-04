@@ -1,7 +1,7 @@
 import os
 import matplotlib.pyplot as plt
 from common.taskset import TaskSet
-from methods.berry_essen.estimation import calculate_response_time_by_berry_essen
+from methods.berry_essen.estimation import calculate_wcdfp_by_berry_essen
 
 
 def verify_berry_essen():
@@ -25,14 +25,14 @@ def verify_berry_essen():
 
     # Calculate response time using Berry-Essen (upper bound)
     print("Calculating response time using Berry-Essen (Upper)...")
-    wcdfp_upper, (x_values_upper, berry_essen_cdf_upper) = calculate_response_time_by_berry_essen(
+    wcdfp_upper, (x_values_upper, berry_essen_cdf_upper) = calculate_wcdfp_by_berry_essen(
         taskset, target_job, log_flag=True, upper=True
     )
     print(f"WCDFP (Berry-Essen Upper): {wcdfp_upper}\n")
 
     # Calculate response time using Berry-Essen (lower bound)
     print("Calculating response time using Berry-Essen (Lower)...")
-    wcdfp_lower, (x_values_lower, berry_essen_cdf_lower) = calculate_response_time_by_berry_essen(
+    wcdfp_lower, (x_values_lower, berry_essen_cdf_lower) = calculate_wcdfp_by_berry_essen(
         taskset, target_job, log_flag=True, upper=False
     )
     print(f"WCDFP (Berry-Essen Lower): {wcdfp_lower}")

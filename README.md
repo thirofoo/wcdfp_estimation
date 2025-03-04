@@ -1,6 +1,6 @@
-# graduation research
+# wcdfp_estimation
 
-## directory structure
+## Directory Structure
 
 ```
 project-root/
@@ -39,29 +39,40 @@ project-root/
 
 ## How to Run the Evaluation
 
+Before executing any script, ensure your project’s environment is synchronized by running:
+```bash
+rye sync
+```
+
 The project uses `rye` for script execution. Below are the available commands categorized into evaluation, plotting, and verification scripts. Use the `rye run <command>` format to execute these scripts. For instance, optional arguments like `--mode` can be appended for specific configurations (e.g., `rye run evaluate_monte_carlo -- --mode 1`).
 
-## How to Run the Evaluation
+> [!NOTE]
+> Running any evaluate script will generate evaluation results as CSV files saved in `src/evaluation/output/`. These CSV files serve as data sources for the subsequent plotting scripts. Ensure that the evaluation step is completed before running any plot commands.
 
-The project uses `rye` for script execution. Below are the categorized commands available in the `pyproject.toml` configuration.
+### Evaluation Scripts
 
 ```bash
-# Evaluation Scripts
 rye run evaluate_monte_carlo                   # Run Monte Carlo evaluation.
 rye run evaluate_monte_carlo_adjust_sample     # Adjust sample size in Monte Carlo evaluation.
 rye run evaluate_berry_essen                   # Evaluate using the Berry-Esseen theorem.
-rye run evaluate_convolution                   # Evaluate using Circular Convolution.
-rye run evaluate_convolution_doubling          # Evaluate using Circular Convolution with Doubling.
-rye run evaluate_all                           # Run evaluations for all methods.
+rye run evaluate_sequential_conv               # Evaluate using Circular Convolution.
+rye run evaluate_aggregate_conv_orig           # Evaluate Circular Convolution with folding order optimization.
 rye run evaluate_one_taskset_all               # Plot normalized response times for one taskset across all methods.
+rye run evaluate_all                           # Run evaluations for all methods.
+```
 
-# Plotting Scripts
+### Plotting Scripts
+
+```bash
 rye run plot_wcdfp_comparison                  # Generate WCDFP comparison plots.
 rye run plot_time_ratio_vs_wcdfp_ratio         # Plot time ratio versus WCDFP ratio.
 rye run plot_execution_time                    # Create execution time boxplots.
 rye run plot_comparison_for_task_id            # Compare results for a specific task ID.
+```
 
-# Verification Scripts
+### Verification Scripts
+
+```bash
 rye run verify_taskset                         # Verify the validity of the generated tasksets.
 rye run verify_monte_carlo                     # Verify Monte Carlo results.
 rye run verify_convolution                     # Verify Circular Convolution results.
@@ -70,10 +81,10 @@ rye run verify_berry_essen                     # Verify Berry-Esseen theorem res
 
 ## Additional Notes
 
-Some scripts support an optional `--mode` flag to customize the script behavior. This flag is specifically applicable to the following plotting scripts:
+Some scripts support an optional `--mode` flag to customize the script behavior. This flag is applicable to the following plotting scripts:
 
-- **plot_time_ratio_vs_wcdfp_ratio**
-- **plot_wcdfp_comparison**
+- plot_time_ratio_vs_wcdfp_ratio
+- plot_wcdfp_comparison
 
 The `--mode` flag modifies the coloring scheme of the plots:
 - `--mode 0`: No gradient coloring (default).
@@ -82,5 +93,7 @@ The `--mode` flag modifies the coloring scheme of the plots:
 
 For example:
 ```bash
-rye run plot_time_ratio_vs_wcdfp_ratio -- --mode 1
+rye run plot_time_ratio_vs_wcdfp_ratio -- --mode 2
 ```
+
+Remember to run `rye sync` whenever you modify your project's dependencies to ensure the environment is updated.
