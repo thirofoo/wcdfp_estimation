@@ -49,4 +49,9 @@ dev-dependencies = []
 allow-direct-references = true
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/evaluation"]
+packages = [
+    "src/evaluation",
+    "src/methods",
+    "src/common",
+    "src/verification"
+]

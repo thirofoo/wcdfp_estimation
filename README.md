@@ -15,7 +15,7 @@ project-root/
 │   ├── evaluation/
 │   │   ├── __init__.py
 │   │   ├── __main__.py
-│   │   └── analize.py
+│   │   └── analyze.py
 │   ├── methods/
 │   │   ├── monte_carlo/
 │   │   │   ├── __init__.py
@@ -37,66 +37,137 @@ project-root/
 └── requirements.lock
 ```
 
-## How to Run the Evaluation
+## Running Scripts
 
-Before executing any script, ensure your project’s environment is synchronized by running:
+This project provides various scripts for evaluation, plotting, and verification. Development was conducted using `rye`, making it the recommended approach for running scripts. However, you can also use the `pip`-based alternative if preferred. Both options execute the same scripts, so choose the one that best fits your workflow.
+
+---
+
+### Option 1: Using rye (Recommended)
+
+1. **Ensure Python 3.8 or later is installed.**
+
+2. **Install rye:**
+    ```bash
+    curl -sSL https://install.rye-up.com | bash
+    ```
+
+3. **Verify the installation:**
+    ```bash
+    rye --version
+    ```
+
+4. **Synchronize your environment:**
+    ```bash
+    rye sync
+    ```
+
+**Run scripts with the `rye run <command>` prefix:**
+
+#### Evaluation Scripts
 ```bash
-rye sync
-```
-
-The project uses `rye` for script execution. Below are the available commands categorized into evaluation, plotting, and verification scripts. Use the `rye run <command>` format to execute these scripts. For instance, optional arguments like `--mode` can be appended for specific configurations (e.g., `rye run evaluate_monte_carlo -- --mode 1`).
-
-> [!NOTE]
-> Running any evaluate script will generate evaluation results as CSV files saved in `src/evaluation/output/`. These CSV files serve as data sources for the subsequent plotting scripts. Ensure that the evaluation step is completed before running any plot commands.
-
-### Evaluation Scripts
-
-```bash
-rye run evaluate_monte_carlo                   # Run Monte Carlo evaluation.
+rye run evaluate_monte_carlo                   # Monte Carlo evaluation.
 rye run evaluate_monte_carlo_adjust_sample     # Adjust sample size in Monte Carlo evaluation.
-rye run evaluate_berry_essen                   # Evaluate using the Berry-Esseen theorem.
-rye run evaluate_sequential_conv               # Evaluate using Circular Convolution.
-rye run evaluate_aggregate_conv_orig           # Evaluate Circular Convolution with folding order optimization.
-rye run evaluate_one_taskset_all               # Plot normalized response times for one taskset across all methods.
-rye run evaluate_all                           # Run evaluations for all methods.
+rye run evaluate_berry_essen                   # Berry-Esseen theorem evaluation.
+rye run evaluate_sequential_conv               # Circular Convolution following arrival order.
+rye run evaluate_aggregate_conv_orig           # Circular Convolution using repeated squaring.
+rye run evaluate_aggregate_conv_imp            # Circular Convolution with repeated squaring and optimized folding order.
+rye run evaluate_one_taskset_all               # Plot normalized response times for one taskset.
+rye run evaluate_all                           # Run all evaluations.
 ```
 
-### Plotting Scripts
-
+#### Plotting Scripts
 ```bash
 rye run plot_wcdfp_comparison                  # Generate WCDFP comparison plots.
 rye run plot_time_ratio_vs_wcdfp_ratio         # Plot time ratio versus WCDFP ratio.
 rye run plot_execution_time                    # Create execution time boxplots.
-rye run plot_comparison_for_task_id            # Compare results for a specific task ID.
+rye run plot_comparison_for_task_id            # Compare results for a specific task.
 ```
 
-### Verification Scripts
-
+#### Verification Scripts
 ```bash
-rye run verify_taskset                         # Verify the validity of the generated tasksets.
+rye run verify_taskset                         # Verify generated tasksets.
 rye run verify_monte_carlo                     # Verify Monte Carlo results.
 rye run verify_convolution                     # Verify Circular Convolution results.
 rye run verify_berry_essen                     # Verify Berry-Esseen theorem results.
 ```
 
-## Additional Notes
+---
 
-Some scripts support an optional `--mode` flag to customize the script behavior. This flag is applicable to the following plotting scripts:
+### Option 2: Using pip (Alternative)
 
-- plot_time_ratio_vs_wcdfp_ratio
-- plot_wcdfp_comparison
+1. **Create a virtual environment:**
+    ```bash
+    python3 -m venv venv
+    ```
 
-The `--mode` flag modifies the coloring scheme of the plots:
-- `--mode 0`: No gradient coloring (default).
-- `--mode 1`: Gradient coloring based on utilization rates.
-- `--mode 2`: Gradient coloring based on task counts.
+2. **Activate the virtual environment:**
+    ```bash
+    # For Linux/macOS:
+    source venv/bin/activate
 
-For example:
+    # For Windows:
+    venv\Scripts\activate
+    ```
+
+3. **Install the project package:**
+    ```bash
+    pip3 install .
+    ```
+
+**After installation, run the scripts directly (without the rye prefix):**
+
+#### Evaluation Scripts
+```bash
+evaluate_monte_carlo
+evaluate_monte_carlo_adjust_sample
+evaluate_berry_essen
+evaluate_sequential_conv
+evaluate_aggregate_conv_orig
+evaluate_aggregate_conv_imp
+evaluate_one_taskset_all
+evaluate_all
+```
+
+#### Plotting Scripts
+```bash
+plot_wcdfp_comparison
+plot_time_ratio_vs_wcdfp_ratio
+plot_execution_time
+plot_comparison_for_task_id
+```
+
+#### Verification Scripts
+```bash
+verify_taskset
+verify_monte_carlo
+verify_convolution
+verify_berry_essen
+```
+
+---
+
+### Additional Note on Plotting
+
+Some plotting scripts support an optional `--mode` flag to change the coloring scheme:
+
+- `--mode 0`: Default (no gradient)
+- `--mode 1`: Gradient based on utilization rates
+- `--mode 2`: Gradient based on task counts
+
+Example usage:
 ```bash
 rye run plot_time_ratio_vs_wcdfp_ratio -- --mode 2
 ```
+or
+```bash
+plot_time_ratio_vs_wcdfp_ratio --mode 2
+```
 
-Remember to run `rye sync` whenever you modify your project's dependencies to ensure the environment is updated.
+*Remember to sync or reinstall dependencies whenever you update project configurations.*
+
+> [!NOTE]
+> Running any evaluate script will generate evaluation results as CSV files saved in `src/evaluation/output/`. These CSV files serve as data sources for the subsequent plotting scripts. Ensure that the evaluation step is completed before running any plot commands.
 
 ## License
 
