@@ -97,3 +97,7 @@ rye run plot_time_ratio_vs_wcdfp_ratio -- --mode 2
 ```
 
 Remember to run `rye sync` whenever you modify your project's dependencies to ensure the environment is updated.
+
+## License
+
+This project is licensed under the MIT License.
