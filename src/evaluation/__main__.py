@@ -13,6 +13,7 @@ from methods.circular_convolution.estimation import (
     calculate_wcdfp_by_sequential_conv,
     calculate_wcdfp_by_aggregate_conv_orig,
     calculate_wcdfp_by_aggregate_conv_imp,
+    calculate_wcdfp_by_aggregate_conv_imp_rescaled,
 )
 from common.taskset import TaskSet
 from common.parameters import MINIMUM_TIME_UNIT, BERRY_ESSEN_COEFFICIENT as A
@@ -27,6 +28,7 @@ default_thread_num = 16
 default_false_probability = 0.000001
 default_error_margin = 0.01
 default_float128_flag = False
+default_l_max = 5000
 output_prefix = "src/evaluation/output"
 
 
@@ -205,7 +207,19 @@ def evaluate_berry_essen(
     print(f"Berry-Essen results saved to {results_path}")
 
 
-def evaluate_convolution_generic(evaluation_fn, file_label, task_num, utilization_rate, total_taskset, thread_num, log_flag, float128_flag):
+def evaluate_convolution_generic(
+    evaluation_fn,
+    file_label,
+    task_num,
+    utilization_rate,
+    total_taskset,
+    thread_num,
+    log_flag,
+    float128_flag,
+    evaluation_fn_kwargs=None,
+):
+    if evaluation_fn_kwargs is None:
+        evaluation_fn_kwargs = {}
     output_dir = get_output_dir(task_num, utilization_rate)
     file_name = f"evaluation_{file_label}" + ("_float128.csv" if float128_flag else ".csv")
     results_path = os.path.join(output_dir, file_name)
@@ -226,7 +240,7 @@ def evaluate_convolution_generic(evaluation_fn, file_label, task_num, utilizatio
             taskset = TaskSet(task_num=task_num, utilization_rate=utilization_rate, seed=taskset_id)
             start_time = time.time()
             # evaluation_fn should return (wcdfp, optional deadline miss count)
-            ret = evaluation_fn(taskset, seed, log_flag, float128_flag)
+            ret = evaluation_fn(taskset, seed, log_flag, float128_flag, **evaluation_fn_kwargs)
             elapsed_time = time.time() - start_time
             if isinstance(ret, tuple) and len(ret) == 2:
                 wcdfp, miss_count = ret
@@ -249,7 +263,7 @@ def evaluate_convolution_generic(evaluation_fn, file_label, task_num, utilizatio
     print(f"{file_label.capitalize()} results saved to {results_path}")
 
 
-def eval_aggregate_conv_orig(taskset, seed, log_flag, float128_flag):
+def eval_aggregate_conv_orig(taskset, seed, log_flag, float128_flag, **_):
     _, wcdfp = calculate_wcdfp_by_aggregate_conv_orig(
         taskset=taskset,
         target_job=taskset.target_job,
@@ -260,7 +274,7 @@ def eval_aggregate_conv_orig(taskset, seed, log_flag, float128_flag):
     return wcdfp
 
 
-def eval_sequential_conv(taskset, seed, log_flag, float128_flag):
+def eval_sequential_conv(taskset, seed, log_flag, float128_flag, **_):
     _, wcdfp = calculate_wcdfp_by_sequential_conv(
         taskset=taskset,
         target_job=taskset.target_job,
@@ -270,12 +284,23 @@ def eval_sequential_conv(taskset, seed, log_flag, float128_flag):
     return wcdfp
 
 
-def eval_aggregate_conv_imp(taskset, seed, log_flag, float128_flag):
+def eval_aggregate_conv_imp(taskset, seed, log_flag, float128_flag, **_):
     _, wcdfp = calculate_wcdfp_by_aggregate_conv_imp(
         taskset=taskset,
         target_job=taskset.target_job,
         log_flag=log_flag,
         float128_flag=float128_flag,
+    )
+    return wcdfp
+
+
+def eval_aggregate_conv_imp_rescaled(taskset, seed, log_flag, float128_flag, l_max):
+    _, wcdfp = calculate_wcdfp_by_aggregate_conv_imp_rescaled(
+        taskset=taskset,
+        target_job=taskset.target_job,
+        log_flag=log_flag,
+        float128_flag=float128_flag,
+        l_max=l_max,
     )
     return wcdfp
 
@@ -300,6 +325,62 @@ def evaluate_aggregate_conv_imp(task_num=default_task_num, utilization_rate=defa
                                log_flag=default_log_flag, float128_flag=default_float128_flag):
     evaluate_convolution_generic(eval_aggregate_conv_imp, "aggregate_conv_imp", task_num, utilization_rate,
                                  total_taskset, thread_num, log_flag, float128_flag)
+
+
+def evaluate_aggregate_conv_imp_rescaled(
+    task_num=default_task_num,
+    utilization_rate=default_utilization_rate,
+    total_taskset=default_total_taskset,
+    thread_num=default_thread_num,
+    log_flag=default_log_flag,
+    float128_flag=default_float128_flag,
+    l_max=default_l_max,
+):
+    file_label = f"aggregate_conv_imp_rescaled_lmax{int(l_max)}"
+    evaluate_convolution_generic(
+        eval_aggregate_conv_imp_rescaled,
+        file_label,
+        task_num,
+        utilization_rate,
+        total_taskset,
+        thread_num,
+        log_flag,
+        float128_flag,
+        evaluation_fn_kwargs={"l_max": int(l_max)},
+    )
+
+
+def evaluate_aggregate_conv_imp_rescaled_sweep(
+    total_taskset=default_total_taskset,
+    thread_num=default_thread_num,
+    log_flag=default_log_flag,
+    float128_flag=default_float128_flag,
+    l_max_start=256,
+    l_max_limit=1_000_000,
+):
+    all_task_num = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100]
+    all_utilization_rate = [0.60, 0.65, 0.70]
+
+    l_max_values = []
+    current_l_max = int(l_max_start)
+    while current_l_max <= int(l_max_limit):
+        l_max_values.append(current_l_max)
+        current_l_max *= 2
+
+    print(f"L_max sweep targets: {l_max_values}")
+    for l_max in l_max_values:
+        for t_num in all_task_num:
+            for u_rate in all_utilization_rate:
+                print(f"Evaluating rescaled AC for TaskNum: {t_num}, UtilizationRate: {u_rate}, L_max: {l_max}")
+                evaluate_aggregate_conv_imp_rescaled(
+                    task_num=t_num,
+                    utilization_rate=u_rate,
+                    total_taskset=total_taskset,
+                    thread_num=thread_num,
+                    log_flag=log_flag,
+                    float128_flag=float128_flag,
+                    l_max=l_max,
+                )
 
 
 def evaluate_all_methods():
